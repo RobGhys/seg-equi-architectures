@@ -5,12 +5,15 @@ accordingly to the _settings.json file (specificities for each dataset)
 
 import argparse
 import json
+import os
 from datetime import datetime
 from time import time
 
 import torch
 import torch.nn.functional as F
 from torch import optim
+from tqdm import tqdm
+
 from load_data import *
 from load_model import *
 from scores import DiceLoss, DiceCoeff, IoUCoeff
@@ -46,7 +49,8 @@ if new_model_name:
 else:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, model_name, 'fold_'+str(fold))
 
-data_location_lucia = True
+os.makedirs(output_path, exist_ok=True)
+data_location_lucia = False
 
 if data_location_lucia:
     settings_json = '_settings_data.json'
@@ -106,7 +110,7 @@ summary = {
         'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': []
         }
     }
-for epoch in range(settings['models']['num_epochs']):
+for epoch in tqdm(range(settings['models']['num_epochs'])):
 
     # Training loop
     model.train()

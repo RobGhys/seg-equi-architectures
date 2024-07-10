@@ -51,7 +51,7 @@
         }
     },
     "kvasir": {
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/kvasir",
+        "path": "/home/rob/Documents/3_projects/bench/kvasir",
         "in_channels": 3,
         "n_classes": 1,
         "mask_type": "single_class",
@@ -61,11 +61,11 @@
         },
         "batch_size": 32,
         "shuffle": true,
-        "num_workers": 4,
+        "num_workers": 32,
         "models": {
             "input_size": 224,
             "lr": 0.0001,
-            "num_epochs": 200,
+            "num_epochs": 50,
             "UNet_vanilla": {
                 "lbda": 4,
                 "bilinear": true,
