@@ -1,11 +1,11 @@
 import sys
-sys.path.append('../../U-Net')
+import os
+
 
 import torch.nn as nn
 import e2cnn.nn as e2_nn
 from models import *
 from building_blocks import *
-
 
 
 def getModel(model_name, settings):

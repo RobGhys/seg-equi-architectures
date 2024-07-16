@@ -3,6 +3,7 @@ This code train a U-Net model on different preprocessed datasets
 accordingly to the _settings.json file (specificities for each dataset)
 """
 
+import random
 import argparse
 import json
 import os
@@ -21,17 +22,31 @@ from scores import DiceLoss, DiceCoeff, IoUCoeff
 from torchvision.utils import save_image
 from torchmetrics import JaccardIndex
 
+
+def overlay_mask(image, mask, color=(1, 1, 1)):
+    """Overlay mask on the image. Mask is expected to be in the same size as the image."""
+    # Convert mask to 3-channel
+    if mask.size(0) == 1:
+        mask = mask.repeat(3, 1, 1)
+
+    # Apply the mask
+    overlayed = image.clone()
+    for c in range(3):
+        overlayed[c][mask[c] > 0.5] = color[c]
+    return overlayed
+
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser(description='Train a U-Net model on different preprocessed datasets')
 parser.add_argument('dataset_name', type=str, help='id of the dataset to use', choices=['NucleiSeg', 'kvasir'])
-parser.add_argument('model_name', type=str, help='model to use', 
+parser.add_argument('model_name', type=str, help='model to use',
                     choices=['UNet_vanilla', 'UNet_bcnn', 'UNet_e2cnn'])
 parser.add_argument('fold', type=int, help='fold to use', choices=[0, 1, 2, 3, 4])
 parser.add_argument('--use_amp', default=False, help='use automatic mixed precision', action='store_true')
 parser.add_argument('--save_logs', default=False, help='save the logs of the training', action='store_true')
 parser.add_argument('--save_model', default=False, help='save the model', action='store_true')
-parser.add_argument('--save_images', default=False, 
+parser.add_argument('--save_images', default=False,
                     help='save the images for the first batch of each epoch', action='store_true')
 parser.add_argument('--new_model_name', type=str, help='Optional name of the folder to save the results', default=None)
 
@@ -45,9 +60,9 @@ save_images = parser.parse_args().save_images
 new_model_name = parser.parse_args().new_model_name
 
 if new_model_name:
-    output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_'+str(fold))
+    output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_' + str(fold))
 else:
-    output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, model_name, 'fold_'+str(fold))
+    output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, model_name, 'fold_' + str(fold))
 
 os.makedirs(output_path, exist_ok=True)
 data_location_lucia = False
@@ -55,7 +70,7 @@ data_location_lucia = False
 if data_location_lucia:
     settings_json = '_settings_data.json'
 else:
-    settings_json = '_settings_data_local.json'
+    settings_json = '_settings_data_local_basic.json'
 # Get the data params
 with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
@@ -70,15 +85,15 @@ model = model.to(device=device)
 print("\n * Number of parameters:", n_params)
 
 # Small test of the model
-x = torch.randn((settings['batch_size'], settings['in_channels'], 
-                 settings['models']['input_size'], 
+x = torch.randn((settings['batch_size'], settings['in_channels'],
+                 settings['models']['input_size'],
                  settings['models']['input_size'])).to(device=device)
 print("\n * Sanity check of the model:\n",
       "\tinput shape:", x.shape,
       "\n\toutput shape:", model(x).shape)
 
 # Define the optimizer, the loss and the learning rate scheduler
-optimizer = optim.RMSprop(model.parameters(), lr=settings['models']['lr'], 
+optimizer = optim.RMSprop(model.parameters(), lr=settings['models']['lr'],
                           weight_decay=1e-6, momentum=0.5, foreach=True)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.33)
 grad_scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
@@ -93,10 +108,11 @@ else:
 
 if save_logs:
     from torch.utils.tensorboard import SummaryWriter
+
     # Initialize logging
     now = datetime.now()
-    writer = SummaryWriter(os.path.join(output_path, 
-                                        now.strftime('%m_%d_%Y')+'_'+now.strftime('%H_%M_%S')))
+    writer = SummaryWriter(os.path.join(output_path,
+                                        now.strftime('%m_%d_%Y') + '_' + now.strftime('%H_%M_%S')))
 else:
     writer = None
 
@@ -105,11 +121,11 @@ summary = {
     'n_params': n_params,
     'train': {
         'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'time': []
-        }, 
+    },
     'test': {
         'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': []
-        }
     }
+}
 for epoch in tqdm(range(settings['models']['num_epochs'])):
 
     # Training loop
@@ -150,16 +166,16 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
     if writer:
         writer.add_scalar('Loss/train_ce', epoch_loss_ce, epoch)
         writer.add_scalar('Loss/train_dice', epoch_loss_dice, epoch)
-        writer.add_scalar('Dice/train', epoch_dice_score/len(train_loader), epoch)
-        writer.add_scalar('IoU/train', epoch_iou_score/len(train_loader), epoch)
+        writer.add_scalar('Dice/train', epoch_dice_score / len(train_loader), epoch)
+        writer.add_scalar('IoU/train', epoch_iou_score / len(train_loader), epoch)
         writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
-        writer.add_scalar('Time', time()-start_time, epoch)
+        writer.add_scalar('Time', time() - start_time, epoch)
 
     summary['train']['loss_ce'].append(epoch_loss_ce)
     summary['train']['loss_dice'].append(epoch_loss_dice)
-    summary['train']['dice_score'].append(epoch_dice_score/len(train_loader))
-    summary['train']['IoU_score'].append(epoch_iou_score/len(train_loader))
-    summary['train']['time'].append(time()-start_time)
+    summary['train']['dice_score'].append(epoch_dice_score / len(train_loader))
+    summary['train']['IoU_score'].append(epoch_iou_score / len(train_loader))
+    summary['train']['time'].append(time() - start_time)
 
     # Testing loop
     model.eval()
@@ -188,24 +204,46 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         epoch_iou_score += iou_score.item()
 
         # Save the images
-        if i == 0 and save_images:
-            save_image(imgs, os.path.join(output_path, 'imgs_epoch_{}.png'.format(epoch)))
-            save_image(masks_pred, os.path.join(output_path, 'preds_epoch_{}.png'.format(epoch)))
-            save_image(masks.float(), os.path.join(output_path, 'masks_epoch_{}.png'.format(epoch)))
+        if i == 0 and (epoch + 1) % 10 == 0 and save_images:
+            random_index = random.randint(0, imgs.size(0) - 1)
+
+            # save_image(imgs[random_index],
+            #            os.path.join(output_path, 'imgs_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
+            # save_image(masks_pred[random_index],
+            #            os.path.join(output_path, 'preds_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
+            # save_image(masks[random_index].float(),
+            #            os.path.join(output_path, 'masks_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
+
+            # Get the selected image, mask, and predicted mask
+            img = imgs[random_index]
+            mask = masks[random_index]
+            mask_pred = masks_pred[random_index]
+
+            # Overlay the masks on the images
+            img_with_mask = overlay_mask(img, mask)
+            img_with_pred_mask = overlay_mask(img, mask_pred)
+
+            # Stack the original image, image with true mask, and image with predicted mask
+            grid = make_grid([img, img_with_mask, img_with_pred_mask], nrow=3)
+
+            # Save the grid image
+            save_image(grid, os.path.join(output_path,
+                                          'comparison_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
 
     if writer:
         writer.add_scalar('Loss/test_ce', epoch_loss_ce, epoch)
         writer.add_scalar('Loss/test_dice', epoch_loss_dice, epoch)
-        writer.add_scalar('Dice/test', epoch_dice_score/len(test_loader), epoch)
-        writer.add_scalar('IoU/test', epoch_iou_score/len(test_loader), epoch)
+        writer.add_scalar('Dice/test', epoch_dice_score / len(test_loader), epoch)
+        writer.add_scalar('IoU/test', epoch_iou_score / len(test_loader), epoch)
 
     summary['test']['loss_ce'].append(epoch_loss_ce)
     summary['test']['loss_dice'].append(epoch_loss_dice)
-    summary['test']['dice_score'].append(epoch_dice_score/len(test_loader))
-    summary['test']['IoU_score'].append(epoch_iou_score/len(test_loader))
+    summary['test']['dice_score'].append(epoch_dice_score / len(test_loader))
+    summary['test']['IoU_score'].append(epoch_iou_score / len(test_loader))
 
+    print(f'Epoch : {epoch} | dice score : {epoch_dice_score / len(test_loader)} | IoU score : {epoch_iou_score / len(test_loader)}')
     # Update the learning rate
-    scheduler.step(epoch_loss_ce+epoch_loss_dice)
+    scheduler.step(epoch_loss_ce + epoch_loss_dice)
 
     # Save the model
     if save_model:

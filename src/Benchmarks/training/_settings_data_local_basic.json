@@ -5,7 +5,7 @@
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [264, 264], "RandomCrop": [224, 224], 
+            "Resize": [264, 264], "RandomCrop": [224, 224],
             "flip": true, "rot": true, "Normalize": null
         },
         "batch_size": 32,
@@ -56,16 +56,19 @@
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [264, 264], "RandomCrop": [224, 224], 
-            "flip": true, "rot": true, "Normalize": null
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": false,
+            "rot": false,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
-        "batch_size": 16,
+        "batch_size": 8,
         "shuffle": true,
         "num_workers": 32,
         "models": {
             "input_size": 224,
             "lr": 0.0001,
-            "num_epochs": 5,
+            "num_epochs": 25,
             "UNet_vanilla": {
                 "lbda": 4,
                 "bilinear": true,
