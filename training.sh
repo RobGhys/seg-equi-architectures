@@ -25,7 +25,7 @@ export MKL_NUM_THREADS=8
 export PYTHONPATH=$PYTHONPATH:/gpfs/projects/acad/bcnn/seg-equi-architectures/src/U-Net
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
-python src/Benchmarks/training/main.py kvasir UNet_vanilla $SLURM_ARRAY_TASK_ID --save_logs --save_images
+python src/Benchmarks/training/main.py kvasir UNet_vanilla $SLURM_ARRAY_TASK_ID --save_logs --save_images --location_lucia
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
 echo "Exiting the program."
