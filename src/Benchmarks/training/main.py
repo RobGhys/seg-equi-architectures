@@ -36,6 +36,21 @@ def overlay_mask(image, mask, color=(1, 1, 1)):
     return overlayed
 
 
+def calculate_metrics(pred, true):
+    pred = pred.astype(bool)
+    true = true.astype(bool)
+
+    VP = np.sum((pred == 1) & (true == 1))
+    FP = np.sum((pred == 1) & (true == 0))
+    VN = np.sum((pred == 0) & (true == 0))
+    FN = np.sum((pred == 0) & (true == 1))
+
+    precision = VP / (VP + FP) if (VP + FP) > 0 else 0
+    recall = VP / (VP + FN) if (VP + FN) > 0 else 0
+    accuracy = (VP + VN) / (VP + VN + FP + FN)
+
+    return precision, recall, accuracy
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser(description='Train a U-Net model on different preprocessed datasets')
@@ -120,10 +135,10 @@ else:
 summary = {
     'n_params': n_params,
     'train': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'time': []
+        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision': [], 'recall': [], 'accuracy': [], 'time': []
     },
     'test': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': []
+        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision': [], 'recall': [], 'accuracy': []
     }
 }
 for epoch in tqdm(range(settings['models']['num_epochs'])):
@@ -134,6 +149,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
     epoch_loss_dice = 0
     epoch_dice_score = 0
     epoch_iou_score = 0
+    epoch_precision = 0
+    epoch_recall = 0
+    epoch_accuracy = 0
     n = 0
     start_time = time()
     for (imgs, masks) in train_loader:
@@ -146,6 +164,13 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                 loss_dice = dice_criterion(masks_pred, masks)
                 dice_score = dice_coeff(masks_pred, masks)
                 iou_score = IoU_coeff(masks_pred, masks)
+
+                masks_pred_np = masks_pred.detach().cpu().numpy()
+                masks_np = masks.detach().cpu().numpy()
+                precision, recall, accuracy = calculate_metrics(masks_pred_np, masks_np)
+                epoch_precision += precision
+                epoch_recall += recall
+                epoch_accuracy += accuracy
             else:
                 raise NotImplementedError("Multiclass dice score not implemented")
             loss = loss_ce + loss_dice
@@ -168,6 +193,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         writer.add_scalar('Loss/train_dice', epoch_loss_dice, epoch)
         writer.add_scalar('Dice/train', epoch_dice_score / len(train_loader), epoch)
         writer.add_scalar('IoU/train', epoch_iou_score / len(train_loader), epoch)
+        writer.add_scalar('Precision/train', epoch_precision / len(train_loader), epoch)
+        writer.add_scalar('Recall/train', epoch_recall / len(train_loader), epoch)
+        writer.add_scalar('Accuracy/train', epoch_accuracy / len(train_loader), epoch)
         writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
         writer.add_scalar('Time', time() - start_time, epoch)
 
@@ -175,6 +203,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
     summary['train']['loss_dice'].append(epoch_loss_dice)
     summary['train']['dice_score'].append(epoch_dice_score / len(train_loader))
     summary['train']['IoU_score'].append(epoch_iou_score / len(train_loader))
+    summary['train']['precision'].append(epoch_precision / len(train_loader))
+    summary['train']['recall'].append(epoch_recall / len(train_loader))
+    summary['train']['accuracy'].append(epoch_accuracy / len(train_loader))
     summary['train']['time'].append(time() - start_time)
 
     # Testing loop
@@ -183,6 +214,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
     epoch_loss_dice = 0
     epoch_dice_score = 0
     epoch_iou_score = 0
+    epoch_precision = 0
+    epoch_recall = 0
+    epoch_accuracy = 0
     for i, (imgs, masks) in enumerate(test_loader):
         imgs, masks = imgs.to(device, dtype=torch.float32), masks.to(device, dtype=torch.float32)
 
@@ -193,6 +227,12 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                 loss_dice = dice_criterion(masks_pred, masks)
                 dice_score = dice_coeff(masks_pred, masks)
                 iou_score = IoU_coeff(masks_pred, masks)
+                masks_pred_np = masks_pred.detach().cpu().numpy()
+                masks_np = masks.detach().cpu().numpy()
+                precision, recall, accuracy = calculate_metrics(masks_pred_np, masks_np)
+                epoch_precision += precision
+                epoch_recall += recall
+                epoch_accuracy += accuracy
             else:
                 raise NotImplementedError("Multiclass dice score not implemented")
             loss = loss_ce + loss_dice
@@ -206,13 +246,6 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         # Save the images
         if i == 0 and (epoch + 1) % 10 == 0 and save_images:
             random_index = random.randint(0, imgs.size(0) - 1)
-
-            # save_image(imgs[random_index],
-            #            os.path.join(output_path, 'imgs_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
-            # save_image(masks_pred[random_index],
-            #            os.path.join(output_path, 'preds_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
-            # save_image(masks[random_index].float(),
-            #            os.path.join(output_path, 'masks_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
 
             # Get the selected image, mask, and predicted mask
             img = imgs[random_index]
@@ -235,13 +268,22 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         writer.add_scalar('Loss/test_dice', epoch_loss_dice, epoch)
         writer.add_scalar('Dice/test', epoch_dice_score / len(test_loader), epoch)
         writer.add_scalar('IoU/test', epoch_iou_score / len(test_loader), epoch)
+        writer.add_scalar('Precision/test', epoch_precision / len(test_loader), epoch)
+        writer.add_scalar('Recall/test', epoch_recall / len(test_loader), epoch)
+        writer.add_scalar('Accuracy/test', epoch_accuracy / len(test_loader), epoch)
 
     summary['test']['loss_ce'].append(epoch_loss_ce)
     summary['test']['loss_dice'].append(epoch_loss_dice)
     summary['test']['dice_score'].append(epoch_dice_score / len(test_loader))
     summary['test']['IoU_score'].append(epoch_iou_score / len(test_loader))
+    summary['test']['precision'].append(epoch_precision / len(test_loader))
+    summary['test']['recall'].append(epoch_recall / len(test_loader))
+    summary['test']['accuracy'].append(epoch_accuracy / len(test_loader))
 
-    print(f'Epoch : {epoch} | dice score : {epoch_dice_score / len(test_loader)} | IoU score : {epoch_iou_score / len(test_loader)}')
+    print(f'Epoch : {epoch} | dice : {epoch_dice_score / len(test_loader) :.2f} | IoU : {epoch_iou_score / len(test_loader):.2f}'
+          f'Accuracy : {epoch_accuracy / len(test_loader) :.2f} | Precision : {epoch_precision / len(test_loader) :.2f}'
+          f'| Recall : {epoch_recall / len(test_loader)} \n')
+
     # Update the learning rate
     scheduler.step(epoch_loss_ce + epoch_loss_dice)
 
