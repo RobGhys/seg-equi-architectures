@@ -17,39 +17,13 @@ from tqdm import tqdm
 
 from load_data import *
 from load_model import *
-from scores import DiceLoss, DiceCoeff, IoUCoeff
+from scores import DiceLoss, DiceCoeff, IoUCoeff, Precision, Recall, Accuracy
 
 from torchvision.utils import save_image
 from torchmetrics import JaccardIndex
 
+from utils import overlay_mask, model_sanity_check
 
-def overlay_mask(image, mask, color=(1, 1, 1)):
-    """Overlay mask on the image. Mask is expected to be in the same size as the image."""
-    # Convert mask to 3-channel
-    if mask.size(0) == 1:
-        mask = mask.repeat(3, 1, 1)
-
-    # Apply the mask
-    overlayed = image.clone()
-    for c in range(3):
-        overlayed[c][mask[c] > 0.5] = color[c]
-    return overlayed
-
-
-def calculate_metrics(pred, true):
-    pred = pred.astype(bool)
-    true = true.astype(bool)
-
-    VP = np.sum((pred == 1) & (true == 1))
-    FP = np.sum((pred == 1) & (true == 0))
-    VN = np.sum((pred == 0) & (true == 0))
-    FN = np.sum((pred == 0) & (true == 1))
-
-    precision = VP / (VP + FP) if (VP + FP) > 0 else 0
-    recall = VP / (VP + FN) if (VP + FN) > 0 else 0
-    accuracy = (VP + VN) / (VP + VN + FP + FN)
-
-    return precision, recall, accuracy
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -97,19 +71,13 @@ train_loader, test_loader = getDataLoader(settings, fold)
 model, n_params = getModel(model_name, settings)
 model = model.to(device=device)
 
-print("\n * Number of parameters:", n_params)
-
-# Small test of the model
-x = torch.randn((settings['batch_size'], settings['in_channels'],
-                 settings['models']['input_size'],
-                 settings['models']['input_size'])).to(device=device)
-print("\n * Sanity check of the model:\n",
-      "\tinput shape:", x.shape,
-      "\n\toutput shape:", model(x).shape)
+model_sanity_check(settings, n_params, device, model)
 
 # Define the optimizer, the loss and the learning rate scheduler
-optimizer = optim.RMSprop(model.parameters(), lr=settings['models']['lr'],
-                          weight_decay=1e-6, momentum=0.5, foreach=True)
+# optimizer = optim.RMSprop(model.parameters(), lr=settings['models']['lr'],
+#                           weight_decay=1e-6, momentum=0.5, foreach=True)
+optimizer = optim.AdamW(model.parameters(), lr=settings['models']['lr'])
+
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=10, factor=0.33)
 grad_scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 if model.n_classes > 1:
@@ -120,6 +88,9 @@ else:
     dice_criterion = DiceLoss()
     dice_coeff = DiceCoeff()
     IoU_coeff = IoUCoeff()
+    precision_metric = Precision()
+    recall_metric = Recall()
+    accuracy_metric = Accuracy()
 
 if save_logs:
     from torch.utils.tensorboard import SummaryWriter
@@ -153,6 +124,7 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
     epoch_recall = 0
     epoch_accuracy = 0
     n = 0
+
     start_time = time()
     for (imgs, masks) in train_loader:
         imgs, masks = imgs.to(device, dtype=torch.float32), masks.to(device, dtype=torch.float32)
@@ -160,17 +132,17 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = F.sigmoid(model(imgs))
             if settings['n_classes'] == 1:
+                # Binarize the predicted masks
+                masks_pred_bin = (masks_pred > 0.5).float()
+
                 loss_ce = BCE_criterion(masks_pred, masks)
                 loss_dice = dice_criterion(masks_pred, masks)
                 dice_score = dice_coeff(masks_pred, masks)
                 iou_score = IoU_coeff(masks_pred, masks)
 
-                masks_pred_np = masks_pred.detach().cpu().numpy()
-                masks_np = masks.detach().cpu().numpy()
-                precision, recall, accuracy = calculate_metrics(masks_pred_np, masks_np)
-                epoch_precision += precision
-                epoch_recall += recall
-                epoch_accuracy += accuracy
+                precision = precision_metric(masks_pred_bin, masks)
+                recall = recall_metric(masks_pred_bin, masks)
+                accuracy = accuracy_metric(masks_pred_bin, masks)
             else:
                 raise NotImplementedError("Multiclass dice score not implemented")
             loss = loss_ce + loss_dice
@@ -187,6 +159,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         epoch_loss_dice += loss_dice.item()
         epoch_dice_score += dice_score.item()
         epoch_iou_score += iou_score.item()
+        epoch_precision += precision.item()
+        epoch_recall += recall.item()
+        epoch_accuracy += accuracy.item()
 
     if writer:
         writer.add_scalar('Loss/train_ce', epoch_loss_ce, epoch)
@@ -223,16 +198,16 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = F.sigmoid(model(imgs))
             if settings['n_classes'] == 1:
+                masks_pred_bin = (masks_pred > 0.5).float()
+
                 loss_ce = BCE_criterion(masks_pred, masks)
                 loss_dice = dice_criterion(masks_pred, masks)
                 dice_score = dice_coeff(masks_pred, masks)
                 iou_score = IoU_coeff(masks_pred, masks)
-                masks_pred_np = masks_pred.detach().cpu().numpy()
-                masks_np = masks.detach().cpu().numpy()
-                precision, recall, accuracy = calculate_metrics(masks_pred_np, masks_np)
-                epoch_precision += precision
-                epoch_recall += recall
-                epoch_accuracy += accuracy
+
+                precision = precision_metric(masks_pred_bin, masks)
+                recall = recall_metric(masks_pred_bin, masks)
+                accuracy = accuracy_metric(masks_pred_bin, masks)
             else:
                 raise NotImplementedError("Multiclass dice score not implemented")
             loss = loss_ce + loss_dice
@@ -242,6 +217,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         epoch_loss_dice += loss_dice.item()
         epoch_dice_score += dice_score.item()
         epoch_iou_score += iou_score.item()
+        epoch_precision += precision.item()
+        epoch_recall += recall.item()
+        epoch_accuracy += accuracy.item()
 
         # Save the images
         if i == 0 and (epoch + 1) % 10 == 0 and save_images:
@@ -280,9 +258,9 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
     summary['test']['recall'].append(epoch_recall / len(test_loader))
     summary['test']['accuracy'].append(epoch_accuracy / len(test_loader))
 
-    print(f'Epoch : {epoch} | dice : {epoch_dice_score / len(test_loader) :.2f} | IoU : {epoch_iou_score / len(test_loader):.2f}'
+    print(f'\nEpoch : {epoch} | dice : {epoch_dice_score / len(test_loader) :.2f} | IoU : {epoch_iou_score / len(test_loader) :.2f} |'
           f'Accuracy : {epoch_accuracy / len(test_loader) :.2f} | Precision : {epoch_precision / len(test_loader) :.2f}'
-          f'| Recall : {epoch_recall / len(test_loader)} \n')
+          f'| Recall : {epoch_recall / len(test_loader) :.2f} | LR : {optimizer.param_groups[0]["lr"] :.5f}')
 
     # Update the learning rate
     scheduler.step(epoch_loss_ce + epoch_loss_dice)
