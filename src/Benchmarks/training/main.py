@@ -34,6 +34,7 @@ parser.add_argument('--save_model', default=False, help='save the model', action
 parser.add_argument('--save_images', default=False,
                     help='save the images for the first batch of each epoch', action='store_true')
 parser.add_argument('--new_model_name', type=str, help='Optional name of the folder to save the results', default=None)
+parser.add_argument('--location_lucia', default=False, help='Data are located on lucia', action='store_true')
 
 dataset_name = parser.parse_args().dataset_name
 model_name = parser.parse_args().model_name
@@ -43,6 +44,7 @@ save_logs = parser.parse_args().save_logs
 save_model = parser.parse_args().save_model
 save_images = parser.parse_args().save_images
 new_model_name = parser.parse_args().new_model_name
+data_location_lucia = parser.parse_args().location_lucia
 
 if new_model_name:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_' + str(fold))
@@ -50,7 +52,6 @@ else:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, model_name, 'fold_' + str(fold))
 
 os.makedirs(output_path, exist_ok=True)
-data_location_lucia = False
 
 if data_location_lucia:
     settings_json = '_settings_data.json'

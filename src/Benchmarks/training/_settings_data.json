@@ -56,15 +56,18 @@
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [264, 264], "RandomCrop": [224, 224], 
-            "flip": true, "rot": true, "Normalize": null
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
-        "batch_size": 32,
+        "batch_size": 64,
         "shuffle": true,
-        "num_workers": 4,
+        "num_workers": 8,
         "models": {
             "input_size": 224,
-            "lr": 0.0001,
+            "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
                 "lbda": 4,
