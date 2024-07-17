@@ -22,7 +22,7 @@
 export OMP_NUM_THREADS=8
 export MKL_NUM_THREADS=8
 
-export PYTHONPATH=$PYTHONPATH:/gpfs/projects/acad/bcnn/seg-equi-architectures
+export PYTHONPATH=$PYTHONPATH:/gpfs/projects/acad/bcnn/seg-equi-architectures/src/U-Net
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 python src/Benchmarks/training/main.py kvasir UNet_vanilla $SLURM_ARRAY_TASK_ID --save_logs --save_images
