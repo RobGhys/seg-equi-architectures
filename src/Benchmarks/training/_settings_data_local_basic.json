@@ -58,8 +58,8 @@
         "transforms": {
             "Resize": [224, 224],
             "RandomCrop": null,
-            "flip": false,
-            "rot": false,
+            "flip": true,
+            "rot": true,
             "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
         "batch_size": 8,
@@ -67,8 +67,8 @@
         "num_workers": 32,
         "models": {
             "input_size": 224,
-            "lr": 0.0001,
-            "num_epochs": 25,
+            "lr": 0.01,
+            "num_epochs": 50,
             "UNet_vanilla": {
                 "lbda": 4,
                 "bilinear": true,

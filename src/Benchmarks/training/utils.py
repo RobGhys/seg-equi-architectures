@@ -1,5 +1,8 @@
 import numpy as np
 import torch
+import random
+import os
+from torchvision.utils import save_image, make_grid
 
 
 def overlay_mask(image, mask, color=(1, 1, 1)):
@@ -25,3 +28,19 @@ def model_sanity_check(settings: dict, n_params: int, device, model) -> None:
     print("\n * Sanity check of the model:\n",
           "\tinput shape:", x.shape,
           "\n\toutput shape:", model(x).shape)
+
+
+def save_image_output(imgs, masks, masks_pred, output_path, epoch, i):
+    random_index = random.randint(0, imgs.size(0) - 1)
+    # Get the selected image, mask, and predicted mask
+    img = imgs[random_index]
+    mask = masks[random_index]
+    mask_pred = masks_pred[random_index]
+    # Overlay the masks on the images
+    img_with_mask = overlay_mask(img, mask)
+    img_with_pred_mask = overlay_mask(img, mask_pred)
+    # Stack the original image, image with true mask, and image with predicted mask
+    grid = make_grid([img, img_with_mask, img_with_pred_mask], nrow=3)
+    # Save the grid image
+    save_image(grid, os.path.join(output_path,
+                                  'comparison_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
