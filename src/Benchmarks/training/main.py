@@ -53,10 +53,12 @@ else:
 
 os.makedirs(output_path, exist_ok=True)
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
 if data_location_lucia:
-    settings_json = '_settings_data.json'
+    settings_json = os.path.join(base_dir, '_settings_data.json')
 else:
-    settings_json = '_settings_data_local_basic.json'
+    settings_json = os.path.join(base_dir, '_settings_data_local_basic.json')
+
 # Get the data params
 with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
