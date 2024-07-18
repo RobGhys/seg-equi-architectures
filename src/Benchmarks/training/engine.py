@@ -9,7 +9,7 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
               phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
               BCE_criterion=None, dice_criterion=None, dice_coeff=None,
               IoU_coeff=None, precision_metric=None, recall_metric=None, accuracy_metric=None,
-              summary=None):
+              summary=None, save_img_freq: int = 20):
     if phase == 'train':
         model.train()
     else:
@@ -59,7 +59,7 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
         epoch_recall += recall.item()
         epoch_accuracy += accuracy.item()
 
-        if phase == 'test' and i == 0 and (epoch + 1) % 10 == 0 and save_images:
+        if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
             save_image_output(imgs, masks, masks_pred, output_path, epoch, i)
 
     avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
@@ -74,6 +74,7 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
         log_data = {
             f"CE Loss/{phase}": avg_epoch_loss_ce,
             f"Dice Loss/{phase}": avg_epoch_loss_dice,
+            f"Total Loss/{phase}": avg_epoch_loss_ce + avg_epoch_loss_dice,
             f"Dice Score/{phase}": avg_epoch_dice_score,
             f"Accuracy/{phase}": avg_epoch_accuracy,
             f"Precision/{phase}": avg_epoch_precision,
@@ -87,6 +88,7 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
     elif writer:
         writer.add_scalar(f'Loss/{phase}_ce', avg_epoch_loss_ce, epoch)
         writer.add_scalar(f'Loss/{phase}_dice', avg_epoch_loss_dice, epoch)
+        writer.add_scalar(f'Loss/{phase}_total', avg_epoch_loss_ce + avg_epoch_loss_dice, epoch)
         writer.add_scalar(f'Dice/{phase}', avg_epoch_dice_score, epoch)
         writer.add_scalar(f'IoU/{phase}', avg_epoch_iou_score, epoch)
         writer.add_scalar(f'Precision/{phase}', avg_epoch_precision, epoch)

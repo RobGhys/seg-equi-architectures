@@ -57,13 +57,16 @@ def launch_weights_and_biases(model: str, dataset: str, settings: dict,
             "dataset": dataset
         }
 
+        lr = settings["models"]["lr"]
+        bs = settings['batch_size']
+
         tags = [
             f'k_fold_idx_{fold_nb}',
-            f'batch_size_{settings["batch_size"]}',
-            f'lr_{settings["models"]["lr"]}'
+            f'batch_size_{bs}',
+            f'lr_{lr}'
         ]
 
-        group_name = f"k__{fold_nb}_lr_{settings['lr']}_batch_size_{settings['batch_size']}"
+        group_name = f"k__{fold_nb}_lr_{lr}_batch_size_{bs}"
 
         wandb.init(
             project=f"seg_equi_{model}_{dataset}",

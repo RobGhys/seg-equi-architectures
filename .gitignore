@@ -1,2 +1,4 @@
 .venv
 .idea
+/src/Benchmarks/training/wandb/
+/src/Benchmarks/training/outputs/
