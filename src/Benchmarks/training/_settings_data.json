@@ -70,7 +70,7 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 4,
+                "lbda": 2,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -79,13 +79,13 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 8,
+                "lbda": 6,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 5,
+                "kernel_size": 7,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -99,7 +99,7 @@
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 5,
+                "kernel_size": 7,
                 "mode": "pure"
             }
         }

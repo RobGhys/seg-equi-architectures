@@ -46,7 +46,6 @@ class UNet_vanilla(nn.Module):
         return logits
     
 
-
 class UNet_bcnn(nn.Module):
     def __init__(self, n_channels, n_classes, lbda=1, bilinear=True, bn=False, 
                  reflex_inv=False, scale_inv=False, cutoff='strong', kernel_size=5,

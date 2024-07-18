@@ -62,15 +62,15 @@
             "rot": true,
             "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
-        "batch_size": 8,
+        "batch_size": 4,
         "shuffle": true,
         "num_workers": 32,
         "models": {
             "input_size": 224,
-            "lr": 0.01,
+            "lr": 0.001,
             "num_epochs": 50,
             "UNet_vanilla": {
-                "lbda": 4,
+                "lbda": 2,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -79,7 +79,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 8,
+                "lbda": 6,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -93,7 +93,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 8,
+                "lbda": 6,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
