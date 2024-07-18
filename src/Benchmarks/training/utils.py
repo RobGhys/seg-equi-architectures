@@ -3,6 +3,7 @@ import torch
 import random
 import os
 from torchvision.utils import save_image, make_grid
+import wandb
 
 
 def overlay_mask(image, mask, color=(1, 1, 1)):
@@ -44,3 +45,41 @@ def save_image_output(imgs, masks, masks_pred, output_path, epoch, i):
     # Save the grid image
     save_image(grid, os.path.join(output_path,
                                   'comparison_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
+
+
+def launch_weights_and_biases(model: str, dataset: str, settings: dict,
+                              fold_nb: int, api_key: str):
+    try:
+        wandb.login(key=api_key)
+
+        config_data = {
+            "model": model,
+            "dataset": dataset
+        }
+
+        tags = [
+            f'k_fold_idx_{fold_nb}',
+            f'batch_size_{settings["batch_size"]}',
+            f'lr_{settings["models"]["lr"]}'
+        ]
+
+        group_name = f"k__{fold_nb}_lr_{settings['lr']}_batch_size_{settings['batch_size']}"
+
+        wandb.init(
+            project=f"seg_equi_{model}_{dataset}",
+            config=config_data,
+            group=group_name,
+            tags=tags
+        )
+
+    except Exception as e:
+        print(f"An error occurred while initializing W&B: {e}")
+
+
+def stop_weights_and_biases():
+    try:
+        print('Closing W&B...\n')
+        wandb.finish()
+        print('...Closed W&B')
+    except Exception as e:
+        print(f"An error occurred while closing W&B: {e}")

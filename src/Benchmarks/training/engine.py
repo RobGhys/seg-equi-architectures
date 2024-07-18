@@ -2,11 +2,14 @@ from src.Benchmarks.training.utils import save_image_output
 from time import time
 import torch
 import torch.nn.functional as F
+import wandb
+
 
 def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
-              phase='train', writer=None, epoch=0, save_images=False, output_path=None,
+              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
               BCE_criterion=None, dice_criterion=None, dice_coeff=None,
-              IoU_coeff=None, precision_metric=None, recall_metric=None, accuracy_metric=None):
+              IoU_coeff=None, precision_metric=None, recall_metric=None, accuracy_metric=None,
+              summary=None):
     if phase == 'train':
         model.train()
     else:
@@ -67,7 +70,21 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
     avg_epoch_recall = epoch_recall / len(data_loader)
     avg_epoch_accuracy = epoch_accuracy / len(data_loader)
 
-    if writer:
+    if log_wandb:
+        log_data = {
+            f"CE Loss/{phase}": avg_epoch_loss_ce,
+            f"Dice Loss/{phase}": avg_epoch_loss_dice,
+            f"Dice Score/{phase}": avg_epoch_dice_score,
+            f"Accuracy/{phase}": avg_epoch_accuracy,
+            f"Precision/{phase}": avg_epoch_precision,
+            f"Recall/{phase}": avg_epoch_recall,
+            f"IoU/{phase}": avg_epoch_iou_score
+        }
+        if phase == 'train':
+            log_data["Learning Rate"] = optimizer.param_groups[0]['lr']
+        wandb.log(log_data, step=epoch)
+
+    elif writer:
         writer.add_scalar(f'Loss/{phase}_ce', avg_epoch_loss_ce, epoch)
         writer.add_scalar(f'Loss/{phase}_dice', avg_epoch_loss_dice, epoch)
         writer.add_scalar(f'Dice/{phase}', avg_epoch_dice_score, epoch)
@@ -79,6 +96,15 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
             writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
             writer.add_scalar('Time', time() - start_time, epoch)
 
+    summary[phase]['loss_ce'].append(avg_epoch_loss_ce)
+    summary[phase]['loss_dice'].append(avg_epoch_loss_dice)
+    summary[phase]['dice_score'].append(avg_epoch_dice_score)
+    summary[phase]['IoU_score'].append(avg_epoch_iou_score)
+    summary[phase]['precision'].append(avg_epoch_precision)
+    summary[phase]['recall'].append(avg_epoch_recall)
+    summary[phase]['accuracy'].append(avg_epoch_accuracy)
+    summary[phase]['time'].append(time() - start_time)
+
     return {
         'loss_ce': avg_epoch_loss_ce,
         'loss_dice': avg_epoch_loss_dice,
@@ -87,5 +113,5 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
         'precision': avg_epoch_precision,
         'recall': avg_epoch_recall,
         'accuracy': avg_epoch_accuracy,
-        'time': time() - start_time if phase == 'train' else None
+        'time': time() - start_time
     }

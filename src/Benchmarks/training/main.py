@@ -3,23 +3,19 @@ This code train a U-Net model on different preprocessed datasets
 accordingly to the _settings.json file (specificities for each dataset)
 """
 
-import random
 import argparse
 import json
-import os
 from datetime import datetime
 
 from torch import optim
+from torchmetrics import JaccardIndex
 from tqdm import tqdm
 
+from engine import run_epoch
 from load_data import *
 from load_model import *
 from scores import DiceLoss, DiceCoeff, IoUCoeff, Precision, Recall, Accuracy
-
-from torchmetrics import JaccardIndex
-
-from utils import model_sanity_check
-from engine import run_epoch
+from utils import model_sanity_check, launch_weights_and_biases
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -35,6 +31,7 @@ parser.add_argument('--save_images', default=False,
                     help='save the images for the first batch of each epoch', action='store_true')
 parser.add_argument('--new_model_name', type=str, help='Optional name of the folder to save the results', default=None)
 parser.add_argument('--location_lucia', default=False, help='Data are located on lucia', action='store_true')
+parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
 
 dataset_name = parser.parse_args().dataset_name
 model_name = parser.parse_args().model_name
@@ -45,6 +42,7 @@ save_model = parser.parse_args().save_model
 save_images = parser.parse_args().save_images
 new_model_name = parser.parse_args().new_model_name
 data_location_lucia = parser.parse_args().location_lucia
+wandb_api_key = parser.parse_args().wandb_api_key
 
 if new_model_name:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_' + str(fold))
@@ -63,6 +61,7 @@ else:
 with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
 
+
 # Load the data
 train_loader, test_loader = getDataLoader(settings, fold)
 
@@ -71,6 +70,11 @@ model, n_params = getModel(model_name, settings)
 model = model.to(device=device)
 
 model_sanity_check(settings, n_params, device, model)
+log_wandb = bool(wandb_api_key)
+if wandb_api_key:
+    launch_weights_and_biases(model=model_name, dataset=dataset_name,
+                              settings=settings, fold_nb=fold, api_key=wandb_api_key)
+    save_logs = False
 
 # Define the optimizer, the loss and the learning rate scheduler
 # optimizer = optim.RMSprop(model.parameters(), lr=settings['models']['lr'],
@@ -91,7 +95,7 @@ else:
     recall_metric = Recall()
     accuracy_metric = Accuracy()
 
-if save_logs:
+if save_logs:  # Use Tensorboard only if no wandb_api_key is provided
     from torch.utils.tensorboard import SummaryWriter
 
     # Initialize logging
@@ -109,37 +113,25 @@ summary = {
         'accuracy': [], 'time': []
     },
     'test': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision': [], 'recall': [], 'accuracy': []
+        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision': [], 'recall': [],
+        'accuracy': [], 'time': []
     }
 }
 
 for epoch in tqdm(range(settings['models']['num_epochs'])):
     train_results = run_epoch(model, train_loader, optimizer, device, settings,
-                              grad_scaler, use_amp, phase='train', writer=writer, epoch=epoch, save_images=save_images,
+                              grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
+                              epoch=epoch, save_images=save_images,
                               output_path=output_path, BCE_criterion=BCE_criterion, dice_criterion=dice_criterion,
                               dice_coeff=dice_coeff, IoU_coeff=IoU_coeff, precision_metric=precision_metric,
-                              recall_metric=recall_metric, accuracy_metric=accuracy_metric)
-    summary['train']['loss_ce'].append(train_results['loss_ce'])
-    summary['train']['loss_dice'].append(train_results['loss_dice'])
-    summary['train']['dice_score'].append(train_results['dice_score'])
-    summary['train']['IoU_score'].append(train_results['IoU_score'])
-    summary['train']['precision'].append(train_results['precision'])
-    summary['train']['recall'].append(train_results['recall'])
-    summary['train']['accuracy'].append(train_results['accuracy'])
-    summary['train']['time'].append(train_results['time'])
+                              recall_metric=recall_metric, accuracy_metric=accuracy_metric, summary=summary)
 
     eval_results = run_epoch(model, test_loader, optimizer, device, settings,
-                             grad_scaler, use_amp, phase='test', writer=writer, epoch=epoch, save_images=save_images,
+                             grad_scaler, use_amp, phase='test', writer=writer, log_wandb=log_wandb,
+                             epoch=epoch, save_images=save_images,
                              output_path=output_path, BCE_criterion=BCE_criterion, dice_criterion=dice_criterion,
                              dice_coeff=dice_coeff, IoU_coeff=IoU_coeff, precision_metric=precision_metric,
-                             recall_metric=recall_metric, accuracy_metric=accuracy_metric)
-    summary['test']['loss_ce'].append(eval_results['loss_ce'])
-    summary['test']['loss_dice'].append(eval_results['loss_dice'])
-    summary['test']['dice_score'].append(eval_results['dice_score'])
-    summary['test']['IoU_score'].append(eval_results['IoU_score'])
-    summary['test']['precision'].append(eval_results['precision'])
-    summary['test']['recall'].append(eval_results['recall'])
-    summary['test']['accuracy'].append(eval_results['accuracy'])
+                             recall_metric=recall_metric, accuracy_metric=accuracy_metric, summary=summary)
 
     print(f'\nEpoch : {epoch} | dice : {eval_results["dice_score"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} |'
           f'Accuracy : {eval_results["accuracy"]:.2f} | Precision : {eval_results["precision"]:.2f}'
