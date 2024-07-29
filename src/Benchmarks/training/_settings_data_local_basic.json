@@ -93,7 +93,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 6,
+                "lbda": 8,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
