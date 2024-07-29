@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=training_seg
+#SBATCH --job-name=training_seg_bcnn
 #SBATCH --array=0-4
-#SBATCH --time=06:00:00 # hh:mm:ss
+#SBATCH --time=12:00:00 # hh:mm:ss
 #
 #SBATCH --ntasks=1
 #SBATCH --gres="gpu:1"
@@ -35,7 +35,7 @@ fi
 wandb_api_key=$1
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
-python src/Benchmarks/training/main.py kvasir UNet_vanilla $SLURM_ARRAY_TASK_ID --save_logs --save_images --location_lucia --wandb_api_key $wandb_api_key
+python src/Benchmarks/training/main.py kvasir UNet_bcnn $SLURM_ARRAY_TASK_ID --save_logs --save_images --location_lucia --wandb_api_key $wandb_api_key
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
 echo "Exiting the program."
