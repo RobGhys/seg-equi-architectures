@@ -28,7 +28,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 12,
+                "lbda": 8,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -42,7 +42,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 12,
+                "lbda": 8,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
