@@ -1,12 +1,15 @@
 {
     "NucleiSeg": {
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/NucleiSeg",
+        "path": "/home/rob/Documents/3_projects/bench/NucleiSeg",
         "in_channels": 3,
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [264, 264], "RandomCrop": [224, 224],
-            "flip": true, "rot": true, "Normalize": null
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
         "batch_size": 32,
         "shuffle": true,
