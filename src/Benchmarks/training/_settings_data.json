@@ -79,7 +79,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 6,
+                "lbda": 8,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
