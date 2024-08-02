@@ -20,7 +20,7 @@ from utils import model_sanity_check, launch_weights_and_biases
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser(description='Train a U-Net model on different preprocessed datasets')
-parser.add_argument('dataset_name', type=str, help='id of the dataset to use', choices=['NucleiSeg', 'kvasir'])
+parser.add_argument('dataset_name', type=str, help='id of the dataset to use', choices=['NucleiSeg', 'kvasir', 'URDE'])
 parser.add_argument('model_name', type=str, help='model to use',
                     choices=['UNet_vanilla', 'UNet_bcnn', 'UNet_e2cnn'])
 parser.add_argument('fold', type=int, help='fold to use', choices=[0, 1, 2, 3, 4])
@@ -55,7 +55,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 if data_location_lucia:
     settings_json = os.path.join(base_dir, '_settings_data.json')
 else:
-    settings_json = os.path.join(base_dir, '_settings_data_local_basic.json')
+    settings_json = os.path.join(base_dir, '_settings_data_local.json')
 
 # Get the data params
 with open(settings_json, 'r') as jsonfile:

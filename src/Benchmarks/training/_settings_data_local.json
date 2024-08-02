@@ -1,14 +1,17 @@
 {
     "NucleiSeg": {
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/NucleiSeg",
+        "path": "/home/rob/Documents/3_projects/bench/NucleiSeg",
         "in_channels": 3,
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [264, 264], "RandomCrop": [224, 224], 
-            "flip": true, "rot": true, "Normalize": null
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
-        "batch_size": 32,
+        "batch_size": 4,
         "shuffle": true,
         "num_workers": 0,
         "models": {
@@ -25,7 +28,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 12,
+                "lbda": 8,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -39,7 +42,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 12,
+                "lbda": 8,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
@@ -56,18 +59,75 @@
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [264, 264], "RandomCrop": [224, 224], 
-            "flip": true, "rot": true, "Normalize": null
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
-        "batch_size": 16,
+        "batch_size": 4,
         "shuffle": true,
         "num_workers": 32,
         "models": {
             "input_size": 224,
-            "lr": 0.0001,
-            "num_epochs": 5,
+            "lr": 0.001,
+            "num_epochs": 50,
             "UNet_vanilla": {
-                "lbda": 4,
+                "lbda": 2,
+                "bilinear": true,
+                "kernel_size": 3,
+                "acti": "relu",
+                "acti_kwargs": {
+                    "inplace": true
+                }
+            },
+            "UNet_bcnn": {
+                "lbda": 8,
+                "bilinear": true,
+                "reflex_inv": false,
+                "scale_inv": false,
+                "TensorCorePad": true,
+                "cutoff": "strong",
+                "kernel_size": 5,
+                "acti": "tanh",
+                "acti_kwargs": {
+                },
+                "mode": "pure",
+                "bn": false
+            },
+            "UNet_e2cnn": {
+                "lbda": 8,
+                "bilinear": true,
+                "acti": "relu",
+                "acti_kwargs": {
+                    "inplace": true
+                },
+                "kernel_size": 5,
+                "mode": "pure"
+            }
+        }
+    },
+        "URDE": {
+        "path": "/home/rob/Documents/3_projects/bench/URDE",
+        "in_channels": 3,
+        "n_classes": 1,
+        "mask_type": "single_class",
+        "transforms": {
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
+        },
+        "batch_size": 4,
+        "shuffle": true,
+        "num_workers": 32,
+        "models": {
+            "input_size": 224,
+            "lr": 0.001,
+            "num_epochs": 50,
+            "UNet_vanilla": {
+                "lbda": 2,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
