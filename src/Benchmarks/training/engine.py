@@ -9,7 +9,7 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
               phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
               BCE_criterion=None, dice_criterion=None, dice_coeff=None,
               IoU_coeff=None, precision_metric=None, recall_metric=None, accuracy_metric=None,
-              summary=None, save_img_freq: int = 20):
+              summary=None, save_img_freq: int = 20, combined_loss=False):
     if phase == 'train':
         model.train()
     else:
@@ -42,7 +42,10 @@ def run_epoch(model, data_loader, optimizer, device, settings, grad_scaler, use_
                 accuracy = accuracy_metric(masks_pred_bin, masks)
             else:
                 raise NotImplementedError("Multiclass dice score not implemented")
-            loss = loss_ce + loss_dice
+            if combined_loss:
+                loss = loss_ce + loss_dice
+            else:
+                loss = loss_dice
 
         if phase == 'train':
             optimizer.zero_grad(set_to_none=True)

@@ -13,7 +13,7 @@
         },
         "batch_size": 4,
         "shuffle": true,
-        "num_workers": 0,
+        "num_workers": 32,
         "models": {
             "input_size": 224,
             "lr": 0.0001,
@@ -70,7 +70,7 @@
         "num_workers": 32,
         "models": {
             "input_size": 224,
-            "lr": 0.001,
+            "lr": 0.0001,
             "num_epochs": 50,
             "UNet_vanilla": {
                 "lbda": 2,
@@ -124,8 +124,8 @@
         "num_workers": 32,
         "models": {
             "input_size": 224,
-            "lr": 0.001,
-            "num_epochs": 50,
+            "lr": 0.0005,
+            "num_epochs": 10,
             "UNet_vanilla": {
                 "lbda": 2,
                 "bilinear": true,
