@@ -20,7 +20,7 @@ class BasicDataset(Dataset):
 
     def __init__(self, dataset_path, filenames=[], mask_type='single_class',
                  transforms={'Resize': None, 'RandomCrop': None, 'flip': True, 'rot': True,
-                             'Normalize': ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))}):
+                             'Normalize': ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))}, multiclass_palette = None):
         self.dataset_path = dataset_path
         self.filenames = filenames
         self.mask_type = mask_type
@@ -93,14 +93,14 @@ class BasicDataset(Dataset):
     def __len__(self):
         return len(self.filenames)
 
-def custom_collate_fn(batch):
-    imgs, masks = zip(*batch)
-    print(f"Collating batch: {[type(img) for img in imgs]}")
-    for i, img in enumerate(imgs):
-        print(f"  Batch element {i} type: {type(img)}, shape: {img.shape if isinstance(img, torch.Tensor) else 'N/A'}")
-    for i, mask in enumerate(masks):
-        print(f"  Batch element {i} type: {type(mask)}, shape: {mask.shape if isinstance(mask, torch.Tensor) else 'N/A'}")
-    return torch.stack(imgs, 0), torch.stack(masks, 0)
+# def custom_collate_fn(batch):
+#     imgs, masks = zip(*batch)
+#     print(f"Collating batch: {[type(img) for img in imgs]}")
+#     for i, img in enumerate(imgs):
+#         print(f"  Batch element {i} type: {type(img)}, shape: {img.shape if isinstance(img, torch.Tensor) else 'N/A'}")
+#     for i, mask in enumerate(masks):
+#         print(f"  Batch element {i} type: {type(mask)}, shape: {mask.shape if isinstance(mask, torch.Tensor) else 'N/A'}")
+#     return torch.stack(imgs, 0), torch.stack(masks, 0)
 
 
 def getDataLoader(settings, fold):

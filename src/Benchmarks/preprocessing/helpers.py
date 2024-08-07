@@ -1,8 +1,9 @@
-import os 
+import os
 import random
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 def check_dir_consistency(img_folder: str, mask_folder: str):
     """
@@ -23,8 +24,9 @@ def check_dir_consistency(img_folder: str, mask_folder: str):
     tuple: A tuple of two lists, the first being the image files and the second being the mask files.
     
     """
+    missing_files = False
     img_files = os.listdir(img_folder)
-    
+
     mask_files = os.listdir(mask_folder)
 
     assert len(img_files) == len(mask_files)
@@ -32,13 +34,17 @@ def check_dir_consistency(img_folder: str, mask_folder: str):
     # Verify that all images have a corresponding mask
     for img_file in img_files:
         if img_file not in mask_files:
-            raise ValueError(f"Mask corresponding to image `{img_file}` was not found.")
+            print(f"Mask corresponding to image `{img_file}` was not found.")
+            missing_files = True
 
-    print("All images have a matching mask.")
+    print(f"Missing files ? {missing_files}")
 
     return img_files, mask_files
 
-def visualize_images(img_folder: str, mask_folder: str, nb_samples: int = 10, seed: int = 42):
+
+def visualize_images(img_folder: str, mask_folder: str,
+                     nb_samples: int = 10, seed: int = 42,
+                     mask_postfix: str = 'instance_color_RGB'):
     """
     Visualize random pairs of images and their corresponding masks with common file name as title.
 
@@ -59,25 +65,28 @@ def visualize_images(img_folder: str, mask_folder: str, nb_samples: int = 10, se
     for i, img_file in enumerate(selection):
         # Load image and mask
         image = Image.open(os.path.join(img_folder, img_file))
-        mask = Image.open(os.path.join(mask_folder, img_file))
+
+        mask_file = img_file.split('.')[0] + '_' + mask_postfix + '.png'
+        mask = Image.open(os.path.join(mask_folder, mask_file))
 
         resolution = f"{image.width}x{image.height}"
-        
+
         # Set up subplot for image
-        plt.subplot(nb_rows, 4, 2*i + 1)
+        plt.subplot(nb_rows, 4, 2 * i + 1)
         plt.imshow(image)
-        plt.title(f"{os.path.splitext(img_file)[0]} ({resolution})", fontsize=10)  
+        plt.title(f"{os.path.splitext(img_file)[0]} ({resolution})", fontsize=10)
 
         plt.axis('off')
 
         # Set up subplot for mask
-        plt.subplot(nb_rows, 4, 2*i + 2)
+        plt.subplot(nb_rows, 4, 2 * i + 2)
         plt.imshow(mask)
-        plt.title(f"{os.path.splitext(img_file)[0]} ({resolution})", fontsize=10) 
+        plt.title(f"{os.path.splitext(img_file)[0]} ({resolution})", fontsize=10)
         plt.axis('off')
 
     plt.tight_layout()
     plt.show()
+
 
 def get_all_dims(img_folder: str):
     img_dimensions = []
@@ -91,7 +100,8 @@ def get_all_dims(img_folder: str):
 
     return unique_dimensions
 
-def create_histograms_of_dims(img_folder: str, nb_bins:int = None, mult: bool = False):
+
+def create_histograms_of_dims(img_folder: str, nb_bins: int = None, mult: bool = False):
     """
     Creates histograms of the dimensions of image files in the given folders.
 
@@ -110,7 +120,7 @@ def create_histograms_of_dims(img_folder: str, nb_bins:int = None, mult: bool = 
         for img_file in os.listdir(img_folder):
             with Image.open(os.path.join(img_folder, img_file)) as img:
                 img_dimensions.append(img.width * img.height)
-    else : 
+    else:
         for img_file in os.listdir(img_folder):
             with Image.open(os.path.join(img_folder, img_file)) as img:
                 img_dimensions.append((img.width, img.height))
