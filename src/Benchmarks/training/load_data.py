@@ -107,6 +107,7 @@ class BasicDataset(Dataset):
         if self.mask_type == 'multiclass_semantic':
             mask: torch.Tensor = self.convert_rgb_to_class_indices(mask)
         elif self.mask_type == 'single_class':
+            mask = mask.convert('L')
             mask: torch.Tensor = transforms.ToTensor()(mask)
             mask: torch.Tensor = (mask > 0).long()
 

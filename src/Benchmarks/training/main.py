@@ -143,6 +143,7 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         else:
             scheduler.step(train_results['loss_dice'])
     else:
+        print(f'Multiclass case')
         train_results = run_epoch_multiclass_seg(model, train_loader, optimizer, device, settings,
                                                  grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                                  epoch=epoch, save_images=save_images,
@@ -153,9 +154,8 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                                                 epoch=epoch, save_images=save_images,
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary)
 
-        print(f'\nEpoch : {epoch} | dice : {eval_results["dice_score"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} |'
-              f'Accuracy : {eval_results["accuracy"]:.2f} | Precision : {eval_results["precision"]:.2f}'
-              f'| Recall : {eval_results["recall"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
+        print(f'\nEpoch : {epoch} | ce loss : {eval_results["loss_ce"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} '
+              f'| LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
         scheduler.step(train_results['loss_dice'])
     if save_model:
