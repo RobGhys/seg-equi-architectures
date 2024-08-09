@@ -157,7 +157,7 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         print(f'\nEpoch : {epoch} | ce loss : {eval_results["loss_ce"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} '
               f'| LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
-        scheduler.step(train_results['loss_dice'])
+        scheduler.step(train_results['loss_ce'])
     if save_model:
         state_dict = model.state_dict()
         torch.save(state_dict, os.path.join(output_path, 'checkpoint_epoch_{}.pth'.format(epoch)))
