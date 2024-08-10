@@ -2,7 +2,7 @@
 #
 #SBATCH --job-name=training_seg
 #SBATCH --array=0-4
-#SBATCH --time=15:00:00 # hh:mm:ss
+#SBATCH --time=48:00:00 # hh:mm:ss
 #
 #SBATCH --ntasks=1
 #SBATCH --gres="gpu:1"

@@ -143,7 +143,6 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         else:
             scheduler.step(train_results['loss_dice'])
     else:
-        print(f'Multiclass case')
         train_results = run_epoch_multiclass_seg(model, train_loader, optimizer, device, settings,
                                                  grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                                  epoch=epoch, save_images=save_images,

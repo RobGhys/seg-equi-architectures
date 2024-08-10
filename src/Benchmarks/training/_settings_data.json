@@ -183,7 +183,7 @@
         "models": {
             "input_size": 224,
             "lr": 0.0005,
-            "num_epochs": 500,
+            "num_epochs": 200,
             "UNet_vanilla": {
                 "lbda": 2,
                 "bilinear": true,
