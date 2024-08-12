@@ -1,6 +1,5 @@
-import torch.nn.functional as F
+import torch
 import torch.nn as nn
-from torch import Tensor
 
 
 class DiceCoeff(nn.Module):
@@ -101,3 +100,36 @@ class Accuracy(nn.Module):
         accuracy = (TP + TN) / (TP + TN + FP + FN + 1e-10)  # Avoid division by zero
 
         return accuracy
+
+
+class DiceLossMulticlass(nn.Module):
+    def __init__(self, smooth=1.0):
+        super(DiceLossMulticlass, self).__init__()
+        self.smooth = smooth
+
+    def forward(self, inputs, targets):
+        """
+        inputs: Tensor of shape (batch_size, num_classes, H, W)
+        targets: Tensor of shape (batch_size, H, W) with class indices
+        """
+        num_classes = inputs.shape[1]
+
+        # Apply softmax to get class probabilities
+        inputs = torch.softmax(inputs, dim=1)
+        targets = targets.to(inputs.device)
+
+        # Create a one-hot encoding of targets
+        targets_one_hot = torch.eye(num_classes, device=inputs.device)[targets].permute(0, 3, 1, 2)
+
+        # Flatten tensors for each class
+        inputs_flat = inputs.reshape(num_classes, -1)
+        targets_flat = targets_one_hot.reshape(num_classes, -1)
+
+        # Calculate Dice for each class
+        intersection = (inputs_flat * targets_flat).sum(dim=1)
+        dice = (2. * intersection + self.smooth) / (inputs_flat.sum(dim=1) + targets_flat.sum(dim=1) + self.smooth)
+
+        # Return mean Dice Loss over all classes
+        dice_loss = 1 - dice.mean()
+
+        return dice_loss

@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as F
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 from torchvision import transforms
 from torchvision.utils import make_grid, save_image
 from typing import Union
@@ -106,7 +106,7 @@ class BasicDataset(Dataset):
 
         if self.mask_type == 'multiclass_semantic':
             mask: torch.Tensor = self.convert_rgb_to_class_indices(mask)
-        elif self.mask_type == 'single_class':
+        elif self.mask_type == 'single_cla  ss':
             mask = mask.convert('L')
             mask: torch.Tensor = transforms.ToTensor()(mask)
             mask: torch.Tensor = (mask > 0).long()
@@ -128,7 +128,7 @@ class BasicDataset(Dataset):
         return len(self.filenames)
 
 
-def get_data_loader(settings, fold):
+def get_data_loader(settings, fold, subset_data: bool = False):
     path = settings['path']
 
     # Get the folds that will be used for training and testing, respectively
@@ -159,16 +159,36 @@ def get_data_loader(settings, fold):
                              transforms=settings['transforms'],
                              multiclass_palette_path=settings['multiclass_palette_path'])
 
-    # Create the dataloaders
-    train_loader = DataLoader(train_data,
-                              batch_size=settings['batch_size'],
-                              shuffle=settings['shuffle'],
-                              num_workers=settings['num_workers'])
+    if subset_data:
+        subset_train_size = 500
+        indices_train = list(range(len(train_data)))
+        subset_train_indices = indices_train[:subset_train_size]
 
-    test_loader = DataLoader(test_data,
-                             batch_size=settings['batch_size'],
-                             shuffle=settings['shuffle'],
-                             num_workers=settings['num_workers'])
+        train_sampler = SubsetRandomSampler(subset_train_indices)
+        train_loader = DataLoader(train_data,
+                                  sampler=train_sampler,
+                                  batch_size=settings['batch_size'],
+                                  num_workers=settings['num_workers'])
+
+        subset_test_size = 200
+        indices_test = list(range(len(test_data)))
+        subset_test_indices = indices_test[:subset_test_size]
+
+        test_sampler = SubsetRandomSampler(subset_test_indices)
+        test_loader = DataLoader(test_data,
+                                 sampler=test_sampler,
+                                 batch_size=settings['batch_size'],
+                                 num_workers=settings['num_workers'])
+    else:
+        # Create the dataloaders
+        train_loader = DataLoader(train_data,
+                                  batch_size=settings['batch_size'],
+                                  shuffle=settings['shuffle'],
+                                  num_workers=settings['num_workers'])
+
+        test_loader = DataLoader(test_data,
+                                 batch_size=settings['batch_size'],
+                                 num_workers=settings['num_workers'])
 
     return train_loader, test_loader
 
