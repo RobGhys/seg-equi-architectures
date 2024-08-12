@@ -1,6 +1,7 @@
 {
     "NucleiSeg": {
         "path": "/home/rob/Documents/3_projects/bench/NucleiSeg",
+        "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
         "mask_type": "single_class",
@@ -55,6 +56,7 @@
     },
     "kvasir": {
         "path": "/home/rob/Documents/3_projects/bench/kvasir",
+        "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
         "mask_type": "single_class",
@@ -107,8 +109,9 @@
             }
         }
     },
-        "URDE": {
+    "URDE": {
         "path": "/home/rob/Documents/3_projects/bench/URDE",
+        "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
         "mask_type": "single_class",
@@ -157,6 +160,61 @@
                     "inplace": true
                 },
                 "kernel_size": 5,
+                "mode": "pure"
+            }
+        }
+    },
+    "isaid": {
+        "path": "/home/rob/Documents/3_projects/bench/isaid",
+        "multiclass_palette_path" : "/home/rob/Documents/3_projects/bench/isaid/isaid_mask_palette.json",
+        "in_channels": 3,
+        "n_classes": 16,
+        "mask_type": "multiclass_semantic",
+        "transforms": {
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
+        },
+        "batch_size": 4,
+        "shuffle": true,
+        "num_workers": 32,
+        "models": {
+            "input_size": 224,
+            "lr": 0.01,
+            "num_epochs": 5,
+            "UNet_vanilla": {
+                "lbda": 4,
+                "bilinear": true,
+                "kernel_size": 3,
+                "acti": "relu",
+                "acti_kwargs": {
+                    "inplace": true
+                }
+            },
+            "UNet_bcnn": {
+                "lbda": 8,
+                "bilinear": true,
+                "reflex_inv": false,
+                "scale_inv": false,
+                "TensorCorePad": true,
+                "cutoff": "strong",
+                "kernel_size": 7,
+                "acti": "tanh",
+                "acti_kwargs": {
+                },
+                "mode": "pure",
+                "bn": false
+            },
+            "UNet_e2cnn": {
+                "lbda": 8,
+                "bilinear": true,
+                "acti": "relu",
+                "acti_kwargs": {
+                    "inplace": true
+                },
+                "kernel_size": 7,
                 "mode": "pure"
             }
         }
