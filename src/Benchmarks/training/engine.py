@@ -25,7 +25,6 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device, settings, grad_s
     start_time = time()
     for i, (imgs, masks, _, _) in enumerate(data_loader):
         imgs, masks = imgs.to(device, dtype=torch.float32), masks.to(device, dtype=torch.float32)
-        print(f'shape of imgs: {imgs.shape} | shape of masks: {masks.shape}')
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = F.sigmoid(model(imgs))
@@ -143,7 +142,6 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     start_time = time()
     for i, (imgs, masks, _, _) in enumerate(data_loader):
         imgs, masks = imgs.to(device, dtype=torch.float32), masks.to(device, dtype=torch.long).squeeze(1)
-        #print(f'shape of imgs: {imgs.shape} | shape of masks: {masks.shape}')
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = model(imgs)
