@@ -177,13 +177,13 @@
             "rot": true,
             "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         },
-        "batch_size": 32,
+        "batch_size": 16,
         "shuffle": true,
         "num_workers": 8,
         "models": {
             "input_size": 224,
-            "lr": 0.0005,
-            "num_epochs": 200,
+            "lr": 0.0001,
+            "num_epochs": 500,
             "UNet_vanilla": {
                 "lbda": 2,
                 "bilinear": true,
