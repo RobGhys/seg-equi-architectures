@@ -107,19 +107,24 @@ class DiceLossMulticlass(nn.Module):
         super(DiceLossMulticlass, self).__init__()
         self.smooth = smooth
 
-    def forward(self, inputs, targets):
+    def forward(self, inputs, targets, debug=False):
         """
         inputs: Tensor of shape (batch_size, num_classes, H, W)
         targets: Tensor of shape (batch_size, H, W) with class indices
         """
         num_classes = inputs.shape[1]
+        if debug:
+            print(f'there are: {num_classes} classes')
 
         # Apply softmax to get class probabilities
         inputs = torch.softmax(inputs, dim=1)
         targets = targets.to(inputs.device)
 
         # Create a one-hot encoding of targets
+        # shape: bs, num_classes, H, W)
         targets_one_hot = torch.eye(num_classes, device=inputs.device)[targets].permute(0, 3, 1, 2)
+        if debug:
+            print(f'targets_one_hot shape: {targets_one_hot.shape} (expects bs, n_classes, H, W')
 
         # Flatten tensors for each class
         inputs_flat = inputs.reshape(num_classes, -1)

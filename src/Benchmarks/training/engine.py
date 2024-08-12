@@ -1,4 +1,4 @@
-from src.Benchmarks.training.utils import save_image_output
+from src.Benchmarks.training.utils import save_image_output, save_multiclass_image_output
 from time import time
 import torch
 import torch.nn.functional as F
@@ -104,9 +104,9 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device, settings, grad_s
     summary[phase]['loss_dice'].append(avg_epoch_loss_dice)
     summary[phase]['dice_score'].append(avg_epoch_dice_score)
     summary[phase]['IoU_score'].append(avg_epoch_iou_score)
-    summary[phase]['precision'].append(avg_epoch_precision)
-    summary[phase]['recall'].append(avg_epoch_recall)
-    summary[phase]['accuracy'].append(avg_epoch_accuracy)
+    summary[phase]['precision_metric'].append(avg_epoch_precision)
+    summary[phase]['recall_metric'].append(avg_epoch_recall)
+    summary[phase]['accuracy_metric'].append(avg_epoch_accuracy)
     summary[phase]['time'].append(time() - start_time)
 
     return {
@@ -114,9 +114,9 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device, settings, grad_s
         'loss_dice': avg_epoch_loss_dice,
         'dice_score': avg_epoch_dice_score,
         'IoU_score': avg_epoch_iou_score,
-        'precision': avg_epoch_precision,
-        'recall': avg_epoch_recall,
-        'accuracy': avg_epoch_accuracy,
+        'precision_metric': avg_epoch_precision,
+        'recall_metric': avg_epoch_recall,
+        'accuracy_metric': avg_epoch_accuracy,
         'time': time() - start_time
     }
 
@@ -124,7 +124,8 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device, settings, grad_s
 def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
                              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
                              eval_metrics=None,
-                             summary=None, save_img_freq: int = 20, combined_loss=False):
+                             summary=None, save_img_freq: int = 20, combined_loss=False,
+                             color_map=None):
     if phase == 'train':
         model.train()
     else:
@@ -134,7 +135,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     epoch_loss_dice = 0
 
     epoch_iou_score = torch.zeros(settings['n_classes'])
-    epoch_f1_score = torch.zeros(settings['n_classes'])
+    #epoch_f1_score = torch.zeros(settings['n_classes'])
     epoch_recall = torch.zeros(settings['n_classes'])
     epoch_precision = torch.zeros(settings['n_classes'])
     epoch_accuracy = torch.zeros(settings['n_classes'])
@@ -149,10 +150,10 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                 loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
                 iou_score = eval_metrics['IoU_score'](masks_pred, masks)
-                f1_score = eval_metrics['f1_score'](masks_pred, masks)
-                recall_score = eval_metrics['recall'](masks_pred, masks)
-                precision_score = eval_metrics['precision'](masks_pred, masks)
-                accuracy_score = eval_metrics['accuracy'](masks_pred, masks)
+                #f1_score = eval_metrics['f1_score'](masks_pred, masks)
+                recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
             else:  # > 1
                 raise NotImplementedError("Method only available for multilabel segmentation.")
             if combined_loss:
@@ -170,18 +171,20 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         epoch_loss_ce += loss_ce.item()
         epoch_loss_dice += loss_dice.item()
         epoch_iou_score += iou_score.item()
-        epoch_f1_score += f1_score.item()
+        #epoch_f1_score += f1_score.item()
         epoch_recall += recall_score.item()
         epoch_precision += precision_score.item()
         epoch_accuracy += accuracy_score.item()
 
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
-            save_image_output(imgs, masks, masks_pred, output_path, epoch, i)
+            save_multiclass_image_output(imgs, masks, masks_pred,
+                                         output_path, epoch, i,
+                                         color_map=color_map)
 
     avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
     avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)
     avg_epoch_iou_score = epoch_iou_score / len(data_loader)
-    avg_epoch_f1_score = epoch_f1_score / len(data_loader)
+    #avg_epoch_f1_score = epoch_f1_score / len(data_loader)
     avg_epoch_recall = epoch_recall / len(data_loader)
     avg_epoch_precision = epoch_precision / len(data_loader)
     avg_epoch_accuracy = epoch_accuracy / len(data_loader)
@@ -191,7 +194,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             f"CE Loss/{phase}": avg_epoch_loss_ce,
             f"Dice Loss/{phase}": avg_epoch_loss_dice,
             f"IoU/{phase}": avg_epoch_iou_score.mean().item(),
-            f"F1 Score/{phase}": avg_epoch_f1_score.mean().item(),
+            #f"F1 Score/{phase}": avg_epoch_f1_score.mean().item(),
             f"Recall/{phase}": avg_epoch_recall.mean().item(),
             f"Precision/{phase}": avg_epoch_precision.mean().item(),
             f"Accuracy/{phase}": avg_epoch_accuracy.mean().item()
@@ -204,7 +207,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         writer.add_scalar(f'Loss/{phase}_ce', avg_epoch_loss_ce, epoch)
         writer.add_scalar(f'Loss/{phase}_dice', avg_epoch_loss_dice, epoch)
         writer.add_scalar(f'IoU/{phase}', avg_epoch_iou_score.mean().item(), epoch)
-        writer.add_scalar(f'F1 Score/{phase}', avg_epoch_f1_score.mean().item(), epoch)
+        #writer.add_scalar(f'F1 Score/{phase}', avg_epoch_f1_score.mean().item(), epoch)
         writer.add_scalar(f'Recall/{phase}', avg_epoch_recall.mean().item(), epoch)
         writer.add_scalar(f'Precision/{phase}', avg_epoch_precision.mean().item(), epoch)
         writer.add_scalar(f'Accuracy/{phase}', avg_epoch_accuracy.mean().item(), epoch)
@@ -216,9 +219,9 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['loss_dice'].append(avg_epoch_loss_dice)
     summary[phase]['IoU_score'].append(avg_epoch_iou_score.mean().item())
     #summary[phase]['f1_score'].append(avg_epoch_f1_score.mean().item())
-    summary[phase]['recall'].append(avg_epoch_recall.mean().item())
-    summary[phase]['precision'].append(avg_epoch_precision.mean().item())
-    summary[phase]['accuracy'].append(avg_epoch_accuracy.mean().item())
+    summary[phase]['recall_metric'].append(avg_epoch_recall.mean().item())
+    summary[phase]['precision_metric'].append(avg_epoch_precision.mean().item())
+    summary[phase]['accuracy_metric'].append(avg_epoch_accuracy.mean().item())
     summary[phase]['time'].append(time() - start_time)
 
     return {
@@ -226,8 +229,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         'loss_dice': avg_epoch_loss_dice,
         'IoU_score': avg_epoch_iou_score.mean().item(),
         #'F1_score': avg_epoch_f1_score.mean().item(),
-        'Recall_score': avg_epoch_recall.mean().item(),
-        'Precision_score': avg_epoch_precision.mean().item(),
-        'Accuracy_score': avg_epoch_accuracy.mean().item(),
+        'recall_metric': avg_epoch_recall.mean().item(),
+        'precision_metric': avg_epoch_precision.mean().item(),
+        'accuracy_metric': avg_epoch_accuracy.mean().item(),
         'time': time() - start_time
     }

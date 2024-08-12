@@ -1,9 +1,12 @@
+from typing import List
+
 import numpy as np
 import torch
 import random
 import os
 from torchvision.utils import save_image, make_grid
 import wandb
+import json
 
 
 def overlay_mask(image, mask, color=(1, 1, 1)):
@@ -45,6 +48,55 @@ def save_image_output(imgs, masks, masks_pred, output_path, epoch, i):
     # Save the grid image
     save_image(grid, os.path.join(output_path,
                                   'comparison_epoch_{}_batch_{}_idx_{}.png'.format(epoch, i, random_index)))
+
+
+def denormalize(image, mean=0.5, std=0.5):
+    image = image.clone()
+    for c in range(3):
+        image[c] = image[c] * std + mean
+    return image
+
+
+def save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map):
+    random_index = random.randint(0, imgs.size(0) - 1)
+
+    img = imgs[random_index]
+    mask = masks[random_index]
+    # only 1 class per pixel
+    mask_pred = masks_pred[random_index].argmax(dim=0)
+
+    img = denormalize(img)
+
+    # Overlay masks on top of the image
+    img_with_mask = overlay_multiclass_mask(img, mask, color_map)
+    img_with_pred_mask = overlay_multiclass_mask(img, mask_pred, color_map)
+
+    grid = make_grid([img.cpu(), img_with_mask, img_with_pred_mask], nrow=3)
+
+    save_image(grid, os.path.join(output_path,
+                                  'comparison_epoch_{}.png'.format(epoch)))
+
+
+def overlay_multiclass_mask(image, mask, color_map):
+    """Superpose un masque multiclass sur l'image. Le masque est attendu en taille 2D (H, W)."""
+    overlayed = image.clone().cpu()
+
+    # Convertir le masque en image RGB
+    mask_rgb = torch.zeros((3, mask.shape[0], mask.shape[1]), dtype=torch.uint8)
+    for class_idx, color in color_map.items():
+        for c in range(3):  # pour chaque canal (R, G, B)
+            mask_rgb[c][mask == class_idx] = color[c]
+
+    # Normaliser le masque RGB
+    mask_rgb = mask_rgb.float() / 255.0
+
+    # Superposer le masque RGB à l'image
+    overlayed += mask_rgb
+
+    # S'assurer que les valeurs restent dans les limites valides [0, 1]
+    overlayed = torch.clamp(overlayed, 0, 1)
+
+    return overlayed
 
 
 def launch_weights_and_biases(model: str, dataset: str, settings: dict,

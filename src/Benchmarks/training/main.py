@@ -29,7 +29,7 @@ parser.add_argument('--use_amp', default=False, help='use automatic mixed precis
 parser.add_argument('--save_logs', default=False, help='save the logs of the training', action='store_true')
 parser.add_argument('--save_model', default=False, help='save the model', action='store_true')
 parser.add_argument('--save_images', default=False,
-                    help='save the images for the first batch of each epoch', action='store_true')
+                    help='save the images with their true and predicted mask while training', action='store_true')
 parser.add_argument('--new_model_name', type=str, help='Optional name of the folder to save the results', default=None)
 parser.add_argument('--location_lucia', default=False, help='Data are located on lucia', action='store_true')
 parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
@@ -90,10 +90,10 @@ if model.n_classes > 1:
     eval_metrics['loss_ce'] = nn.CrossEntropyLoss().to(device)
     eval_metrics['dice_criterion'] = DiceLossMulticlass().to(device)
     eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
-    eval_metrics['f1_score'] = MulticlassF1Score(num_classes=settings['n_classes']).to(device)
-    eval_metrics['recall'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
-    eval_metrics['precision'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
-    eval_metrics['accuracy'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
+    #eval_metrics['f1_score'] = MulticlassF1Score(num_classes=settings['n_classes']).to(device)
+    eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
+    eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
+    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
 else:
     eval_metrics['loss_ce'] = nn.BCEWithLogitsLoss(reduction='mean').to(device)
     eval_metrics['dice_criterion'] = DiceLoss().to(device)
@@ -117,12 +117,12 @@ else:
 summary = {
     'n_params': n_params,
     'train': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision': [], 'recall': [],
-        'accuracy': [], 'time': []
+        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
+        'accuracy_metric': [], 'time': []
     },
     'test': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision': [], 'recall': [],
-        'accuracy': [], 'time': []
+        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
+        'accuracy_metric': [], 'time': []
     }
 }
 
@@ -144,29 +144,36 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                                             combined_loss=combined_loss)
 
         print(f'\nEpoch : {epoch} | dice : {eval_results["dice_score"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} |'
-              f'Accuracy : {eval_results["accuracy"]:.2f} | Precision : {eval_results["precision"]:.2f}'
-              f'| Recall : {eval_results["recall"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
+              f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
+              f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
         if combined_loss:
             scheduler.step(train_results['loss_ce'] + train_results['loss_dice'])
         else:
             scheduler.step(train_results['loss_dice'])
     else:
+        if save_images:
+            palette_path = settings['multiclass_palette_path']
+            with open(palette_path, 'r') as f:
+                color_map = json.load(f)
+                color_map = {int(k): v for k, v in color_map.items()}
+        else:
+            palette_path = None
         train_results = run_epoch_multiclass_seg(model, train_loader, optimizer, device, settings,
                                                  grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                                  epoch=epoch, save_images=save_images,
                                                  output_path=output_path, eval_metrics=eval_metrics, summary=summary,
-                                                 combined_loss=combined_loss)
+                                                 combined_loss=combined_loss, color_map=color_map)
 
         eval_results = run_epoch_multiclass_seg(model, test_loader, optimizer, device, settings,
                                                 grad_scaler, use_amp, phase='test', writer=writer, log_wandb=log_wandb,
                                                 epoch=epoch, save_images=save_images,
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
-                                                combined_loss=combined_loss)
+                                                combined_loss=combined_loss, color_map=color_map)
 
         print(f'\nEpoch : {epoch} | IoU : {eval_results["IoU_score"]:.2f} |'
-              f'Accuracy : {eval_results["accuracy"]:.2f} | Precision : {eval_results["precision"]:.2f}'
-              f'| Recall : {eval_results["recall"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
+              f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
+              f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
         if combined_loss:
             scheduler.step(train_results['loss_ce'] + train_results['loss_dice'])
