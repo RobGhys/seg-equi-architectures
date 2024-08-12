@@ -87,15 +87,15 @@ grad_scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 eval_metrics: dict = {}
 
 if model.n_classes > 1:
-    eval_metrics['criterion'] = nn.CrossEntropyLoss().to(device)
+    eval_metrics['loss_ce'] = nn.CrossEntropyLoss().to(device)
     eval_metrics['dice_criterion'] = DiceLossMulticlass().to(device)
-    eval_metrics['jaccard'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
+    eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
     eval_metrics['f1_score'] = MulticlassF1Score(num_classes=settings['n_classes']).to(device)
     eval_metrics['recall'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
     eval_metrics['precision'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
     eval_metrics['accuracy'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
 else:
-    eval_metrics['BCE_criterion'] = nn.BCELoss(reduction='mean').to(device)
+    eval_metrics['loss_ce'] = nn.BCEWithLogitsLoss(reduction='mean').to(device)
     eval_metrics['dice_criterion'] = DiceLoss().to(device)
     eval_metrics['dice_coeff'] = DiceCoeff().to(device)
     eval_metrics['IoU_coeff'] = IoUCoeff().to(device)
@@ -164,7 +164,7 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss)
 
-        print(f'\nEpoch : {epoch} | dice : {eval_results["dice_score"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} |'
+        print(f'\nEpoch : {epoch} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy"]:.2f} | Precision : {eval_results["precision"]:.2f}'
               f'| Recall : {eval_results["recall"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
 

@@ -27,11 +27,11 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device, settings, grad_s
         imgs, masks = imgs.to(device, dtype=torch.float32), masks.to(device, dtype=torch.float32)
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
-            masks_pred = F.sigmoid(model(imgs))
+            masks_pred = model(imgs)
             if settings['n_classes'] == 1:
                 masks_pred_bin = (masks_pred > 0.5).float()
 
-                loss_ce = eval_metrics['BCE_criterion'](masks_pred, masks)
+                loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
                 dice_score = eval_metrics['dice_coeff'](masks_pred, masks)
                 iou_score = eval_metrics['IoU_coeff'](masks_pred, masks)
@@ -146,9 +146,9 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = model(imgs)
             if settings['n_classes'] > 1:
-                loss_ce = eval_metrics['criterion'](masks_pred, masks)
+                loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
-                iou_score = eval_metrics['jaccard'](masks_pred, masks)
+                iou_score = eval_metrics['IoU_score'](masks_pred, masks)
                 f1_score = eval_metrics['f1_score'](masks_pred, masks)
                 recall_score = eval_metrics['recall'](masks_pred, masks)
                 precision_score = eval_metrics['precision'](masks_pred, masks)
