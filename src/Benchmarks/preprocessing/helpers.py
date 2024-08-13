@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def check_dir_consistency(img_folder: str, mask_folder: str):
+def check_dir_consistency(img_folder: str, mask_folder: str,):
     """
     Checks for consistency between image files and their corresponding mask files in two folders.
 
@@ -26,14 +26,17 @@ def check_dir_consistency(img_folder: str, mask_folder: str):
     """
     missing_files = False
     img_files = os.listdir(img_folder)
+    img_files_no_ext = [img_file.split('.')[0] for img_file in img_files]
 
     mask_files = os.listdir(mask_folder)
+    mask_files_no_ext = [img_file.split('.')[0] for img_file in img_files]
 
     assert len(img_files) == len(mask_files)
+    assert len(img_files_no_ext) == len(mask_files_no_ext)
 
     # Verify that all images have a corresponding mask
-    for img_file in img_files:
-        if img_file not in mask_files:
+    for img_file in img_files_no_ext:
+        if img_file not in mask_files_no_ext:
             print(f"Mask corresponding to image `{img_file}` was not found.")
             missing_files = True
 
