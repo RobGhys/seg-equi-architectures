@@ -152,13 +152,13 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         else:
             scheduler.step(train_results['loss_dice'])
     else:
-        if save_images:
+        if save_images and settings['multiclass_palette_path'] is not None:
             palette_path = settings['multiclass_palette_path']
             with open(palette_path, 'r') as f:
                 color_map = json.load(f)
                 color_map = {int(k): v for k, v in color_map.items()}
         else:
-            palette_path = None
+            color_map = None
         train_results = run_epoch_multiclass_seg(model, train_loader, optimizer, device, settings,
                                                  grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                                  epoch=epoch, save_images=save_images,

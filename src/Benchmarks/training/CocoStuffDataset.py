@@ -85,7 +85,7 @@ class CocoStuffDataset(Dataset):
             img = transforms.Normalize(*self.transforms['Normalize'])(img)
 
         if self.mask_type == 'multiclass_semantic':
-            mask = torch.as_tensor(np.array(mask), dtype=torch.long).unsqueeze(0)
+            mask = torch.as_tensor(np.array(mask), dtype=torch.long)
         elif self.mask_type == 'single_class':
             mask = transforms.ToTensor()(mask).long()
             mask = (mask > 0).long()
@@ -97,7 +97,9 @@ class CocoStuffDataset(Dataset):
                 f"Final tensor types and shapes: img -> {type(img)}, shape {img.shape}, mask -> {type(mask)}, shape {mask.shape}")
             print(f'example mask: {mask}')
 
-        return img, mask, img_path
+        data = {'img':img, 'mask': mask, 'img_path': img_path, 'mask_path': ''}
+
+        return data
 
     def __len__(self):
         return len(self.filenames)

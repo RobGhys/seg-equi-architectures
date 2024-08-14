@@ -126,13 +126,16 @@ class BasicDataset(Dataset):
                 f"Final tensor types and shapes: img -> {type(img)}, shape {img.shape}, mask -> {type(mask)}, shape {mask.shape}")
             print(f'example mask: {mask}')
 
-        return img, mask, img_path, mask_path
+        data = {'img': img, 'mask': mask, 'img_path': img_path, 'mask_path': mask_path}
+
+        #return img, mask, img_path, mask_path
+        return data
 
     def __len__(self):
         return len(self.filenames)
 
 
-def get_data_loader(settings, fold, subset_data: bool = False, name: str = None):
+def get_data_loader(settings, fold, subset_data: bool = False):
     path = settings['path']
 
     # Get the folds that will be used for training and testing, respectively
@@ -151,7 +154,7 @@ def get_data_loader(settings, fold, subset_data: bool = False, name: str = None)
         testing_data += [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
                          if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
 
-    if name != 'coco':
+    if settings['name'] != 'coco':
         # Create the datasets
         train_data = BasicDataset(path,
                                   training_data,
@@ -200,10 +203,7 @@ def get_data_loader(settings, fold, subset_data: bool = False, name: str = None)
                                      pin_memory=True)
 
     else:
-        annotation_file = '/home/rob/Documents/3_projects/bench/coco/output/tmp_data/stuff_annotations_trainval2017/annotations/stuff_train2017.json'
-
-        coco_annotations = COCO(annotation_file)
-        #filenames = list(coco_annotations.imgs.keys())
+        coco_annotations = COCO(settings['annotation_file'])
 
         train_data = CocoStuffDataset(dataset_path=path,
                                       filenames=training_data,
@@ -313,16 +313,14 @@ def visualize_multiclass_batch(images: torch.Tensor, masks: torch.Tensor, output
         # Convert img_with_text back to tensor and append to combined_images
         combined_images.append(torch.tensor(img_with_text).permute(2, 0, 1).float() / 255)
 
-        # Ajouter l'image avec le masque coloré
         img_with_mask = torch.tensor(img_with_text).permute(2, 0, 1).float() / 255
-        img_with_mask += mask_rgb.float() / 255.0  # Appliquer le masque coloré
+        img_with_mask += mask_rgb.float() / 255.0
         combined_images.append(img_with_mask)
 
     combined_images = torch.stack(combined_images)
 
     grid = make_grid(combined_images, nrow=2)
     save_image(grid, os.path.join(output_path, 'visualization_multiclass_epoch_{}.png'.format(epoch)))
-
 
 
 def generate_color_palette(num_classes: int):
@@ -380,7 +378,9 @@ def visualize_multiclass_batch_with_generated_palette(images: torch.Tensor, mask
 
 if __name__ == "__main__":
     settings_kvasir = {
+        "name": "kvasir",
         'path': "/home/rob/Documents/3_projects/bench/kvasir",
+        "annotation_file": None,
         'multiclass_palette_path': None,
         'mask_type': 'single_class',
         'transforms': {
@@ -396,8 +396,10 @@ if __name__ == "__main__":
     }
 
     settings_isaid = {
+        'name': "isaid",
         'path': "/home/rob/Documents/3_projects/bench/isaid",
         'mask_type': 'multiclass_semantic',
+        "annotation_file": None,
         'multiclass_palette_path': '/home/rob/Documents/3_projects/bench/isaid/isaid_mask_palette.json',
         'transforms': {
             'Resize': None,
@@ -412,7 +414,9 @@ if __name__ == "__main__":
     }
 
     settings_coco = {
+        'name': "coco",
         'path': "/home/rob/Documents/3_projects/bench/coco/output",
+        "annotation_file": "/home/rob/Documents/3_projects/bench/coco/output/tmp_data/stuff_annotations_trainval2017/annotations/stuff_train2017.json",
         'mask_type': 'multiclass_semantic',
         'multiclass_palette_path': None,
         'transforms': {
@@ -433,21 +437,22 @@ if __name__ == "__main__":
 
     # dataset choice
     settings = settings_coco
-    name = 'coco'
-    train_loader, test_loader = get_data_loader(settings, fold, subset_data=True, name=name)
+    train_loader, test_loader = get_data_loader(settings, fold, subset_data=True,
+                                                annotation_file=settings['annotation_file'])
 
-    for images, masks, img_paths, mask_paths in train_loader:
-        print(f'mask type: {settings["mask_type"] }')
+    for data in train_loader:
         if settings['mask_type'] == 'multiclass_semantic':
-            if name == 'coco':
-                visualize_multiclass_batch_with_generated_palette(images, masks, output_path, img_paths,
+            if settings['name'] == 'coco':
+                visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'],
+                                                                  output_path, data['img_path'],
                                                                   epoch, num_images=3)
             else:
-                visualize_multiclass_batch(images, masks, output_path, img_paths,
+                visualize_multiclass_batch(data['img'], data['mask'],
+                                           output_path, data['img_path'],
                                            epoch, num_images=3,
                                            palette_path=settings['multiclass_palette_path'])
         elif settings['mask_type'] == 'single_class':
-            visualize_batch(images, masks, output_path, epoch, num_images=3)
+            visualize_batch(data['img'], data['mask'], output_path, epoch, num_images=3)
         else:
             raise NotImplementedError
         break

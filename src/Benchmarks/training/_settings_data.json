@@ -1,6 +1,8 @@
 {
     "NucleiSeg": {
+        "name": "NucleiSeg",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/NucleiSeg",
+        "annotation_file" : null,
         "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
@@ -55,6 +57,8 @@
         }
     },
     "kvasir": {
+        "name": "kvasir",
+        "annotation_file" : null,
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/kvasir",
         "multiclass_palette_path" : null,
         "in_channels": 3,
@@ -110,6 +114,8 @@
         }
     },
     "URDE": {
+        "name": "URDE",
+        "annotation_file" : null,
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/URDE",
         "multiclass_palette_path" : null,
         "in_channels": 3,
@@ -165,7 +171,9 @@
         }
     },
     "isaid": {
+        "name": "isaid",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/isaid",
+        "annotation_file" : null,
         "multiclass_palette_path" : "/gpfs/projects/acad/bcnn/datasets_bench/isaid/isaid_mask_palette.json",
         "in_channels": 3,
         "n_classes": 16,
@@ -220,10 +228,12 @@
         }
     },
     "coco": {
+        "name": "coco",
+        "annotation_file" : "/gpfs/projects/acad/bcnn/datasets_bench/coco/stuff_train2017.json",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/coco",
-        "multiclass_palette_path" : "/gpfs/projects/acad/bcnn/datasets_bench/coco/mask_palette.json",
+        "multiclass_palette_path" : null,
         "in_channels": 3,
-        "n_classes": 16,
+        "n_classes": 92,
         "mask_type": "multiclass_semantic",
         "transforms": {
             "Resize": [224, 224],
