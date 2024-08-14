@@ -7,10 +7,14 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as F
 from PIL import Image
+from pycocotools.coco import COCO
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 from torchvision import transforms
 from torchvision.utils import make_grid, save_image
 from typing import Union
+import random
+
+from src.Benchmarks.training.CocoStuffDataset import CocoStuffDataset
 
 
 class BasicDataset(Dataset):
@@ -128,7 +132,7 @@ class BasicDataset(Dataset):
         return len(self.filenames)
 
 
-def get_data_loader(settings, fold, subset_data: bool = False):
+def get_data_loader(settings, fold, subset_data: bool = False, name: str = None):
     path = settings['path']
 
     # Get the folds that will be used for training and testing, respectively
@@ -147,48 +151,93 @@ def get_data_loader(settings, fold, subset_data: bool = False):
         testing_data += [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
                          if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
 
-    # Create the datasets
-    train_data = BasicDataset(path,
-                              training_data,
-                              mask_type=settings['mask_type'],
-                              transforms=settings['transforms'],
-                              multiclass_palette_path=settings['multiclass_palette_path'])
-    test_data = BasicDataset(path,
-                             testing_data,
-                             mask_type=settings['mask_type'],
-                             transforms=settings['transforms'],
-                             multiclass_palette_path=settings['multiclass_palette_path'])
+    if name != 'coco':
+        # Create the datasets
+        train_data = BasicDataset(path,
+                                  training_data,
+                                  mask_type=settings['mask_type'],
+                                  transforms=settings['transforms'],
+                                  multiclass_palette_path=settings['multiclass_palette_path'])
+        test_data = BasicDataset(path,
+                                 testing_data,
+                                 mask_type=settings['mask_type'],
+                                 transforms=settings['transforms'],
+                                 multiclass_palette_path=settings['multiclass_palette_path'])
 
-    if subset_data:
-        subset_train_size = 500
-        indices_train = list(range(len(train_data)))
-        subset_train_indices = indices_train[:subset_train_size]
+        if subset_data:
+            subset_train_size = 500
+            indices_train = list(range(len(train_data)))
+            subset_train_indices = indices_train[:subset_train_size]
 
-        train_sampler = SubsetRandomSampler(subset_train_indices)
-        train_loader = DataLoader(train_data,
-                                  sampler=train_sampler,
-                                  batch_size=settings['batch_size'],
-                                  num_workers=settings['num_workers'])
+            train_sampler = SubsetRandomSampler(subset_train_indices)
+            train_loader = DataLoader(train_data,
+                                      sampler=train_sampler,
+                                      batch_size=settings['batch_size'],
+                                      num_workers=settings['num_workers'],
+                                      pin_memory=True)
 
-        subset_test_size = 200
-        indices_test = list(range(len(test_data)))
-        subset_test_indices = indices_test[:subset_test_size]
+            subset_test_size = 200
+            indices_test = list(range(len(test_data)))
+            subset_test_indices = indices_test[:subset_test_size]
 
-        test_sampler = SubsetRandomSampler(subset_test_indices)
-        test_loader = DataLoader(test_data,
-                                 sampler=test_sampler,
-                                 batch_size=settings['batch_size'],
-                                 num_workers=settings['num_workers'])
+            test_sampler = SubsetRandomSampler(subset_test_indices)
+            test_loader = DataLoader(test_data,
+                                     sampler=test_sampler,
+                                     batch_size=settings['batch_size'],
+                                     num_workers=settings['num_workers'],
+                                     pin_memory=True)
+        else:
+            # Create the dataloaders
+            train_loader = DataLoader(train_data,
+                                      batch_size=settings['batch_size'],
+                                      shuffle=settings['shuffle'],
+                                      num_workers=settings['num_workers'],
+                                      pin_memory=True)
+
+            test_loader = DataLoader(test_data,
+                                     batch_size=settings['batch_size'],
+                                     num_workers=settings['num_workers'],
+                                     pin_memory=True)
+
     else:
-        # Create the dataloaders
-        train_loader = DataLoader(train_data,
-                                  batch_size=settings['batch_size'],
-                                  shuffle=settings['shuffle'],
-                                  num_workers=settings['num_workers'])
+        annotation_file = '/home/rob/Documents/3_projects/bench/coco/output/tmp_data/stuff_annotations_trainval2017/annotations/stuff_train2017.json'
 
-        test_loader = DataLoader(test_data,
-                                 batch_size=settings['batch_size'],
-                                 num_workers=settings['num_workers'])
+        coco_annotations = COCO(annotation_file)
+        #filenames = list(coco_annotations.imgs.keys())
+
+        train_data = CocoStuffDataset(dataset_path=path,
+                                      filenames=training_data,
+                                      coco_annotations=coco_annotations,
+                                      mask_type=settings['mask_type'],
+                                      transforms=settings['transforms'])
+        test_data = CocoStuffDataset(dataset_path=path,
+                                     filenames=testing_data,
+                                     coco_annotations=coco_annotations,
+                                     mask_type=settings['mask_type'],
+                                     transforms=settings['transforms'])
+
+        if subset_data:
+            subset_train_size = 500
+            indices_train = list(range(len(train_data)))
+            subset_train_indices = indices_train[:subset_train_size]
+
+            train_sampler = SubsetRandomSampler(subset_train_indices)
+            train_loader = DataLoader(train_data,
+                                      sampler=train_sampler,
+                                      batch_size=settings['batch_size'],
+                                      num_workers=settings['num_workers'],
+                                      pin_memory=True)
+
+            subset_test_size = 200
+            indices_test = list(range(len(test_data)))
+            subset_test_indices = indices_test[:subset_test_size]
+
+            test_sampler = SubsetRandomSampler(subset_test_indices)
+            test_loader = DataLoader(test_data,
+                                     sampler=test_sampler,
+                                     batch_size=settings['batch_size'],
+                                     num_workers=settings['num_workers'],
+                                     pin_memory=True)
 
     return train_loader, test_loader
 
@@ -275,6 +324,60 @@ def visualize_multiclass_batch(images: torch.Tensor, masks: torch.Tensor, output
     save_image(grid, os.path.join(output_path, 'visualization_multiclass_epoch_{}.png'.format(epoch)))
 
 
+
+def generate_color_palette(num_classes: int):
+    random.seed(0)  # Fixing the seed for reproducibility
+    color_palette = {}
+    for i in range(num_classes):
+        color_palette[i] = [random.randint(0, 255) for _ in range(3)]
+    return color_palette
+
+def visualize_multiclass_batch_with_generated_palette(images: torch.Tensor, masks: torch.Tensor, output_path: str,
+                                                      image_paths: List[str], epoch: int, num_images: int = 3) -> None:
+    unique_classes = torch.unique(masks)
+    color_map = generate_color_palette(len(unique_classes))
+    color_map = {int(k): v for k, v in zip(unique_classes.tolist(), color_map.values())}
+
+    selected_imgs = images[:num_images]
+    selected_masks = masks[:num_images]
+    selected_paths = image_paths[:num_images]
+
+    combined_images: List[torch.Tensor] = []
+
+    for i in range(num_images):
+        img = selected_imgs[i]
+        mask = selected_masks[i].squeeze(0)  # Remove C dim for the mask
+        img_path = selected_paths[i]
+
+        # Convert to color image
+        mask_rgb = torch.zeros((3, mask.shape[0], mask.shape[1]), dtype=torch.uint8)
+        for class_idx, color in color_map.items():
+            mask_rgb[:, mask == class_idx] = torch.tensor(color, dtype=torch.uint8).unsqueeze(1)
+
+        # Denormalize the image and convert to uint8 for OpenCV compatibility
+        img_denorm = (img.clone() * 255).byte().permute(1, 2, 0).numpy()
+
+        # Add the image path text on the image
+        fold_nb = img_path.split('/')[-2]
+        img_nb = img_path.split('/')[-1].split('.png')[0]
+        path_name = fold_nb + '/' + img_nb
+        print(f'image path name: {path_name}')
+        img_with_text = cv2.putText(img_denorm.copy(), path_name, (10, 20), cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.5, (255, 0, 0), 1)
+
+        # Convert img_with_text back to tensor and append to combined_images
+        combined_images.append(torch.tensor(img_with_text).permute(2, 0, 1).float() / 255)
+
+        img_with_mask = torch.tensor(img_with_text).permute(2, 0, 1).float() / 255
+        img_with_mask += mask_rgb.float() / 255.0
+        combined_images.append(img_with_mask)
+
+    combined_images = torch.stack(combined_images)
+
+    grid = make_grid(combined_images, nrow=2)
+    save_image(grid, os.path.join(output_path, 'visualization_multiclass_epoch_{}.png'.format(epoch)))
+
+
 if __name__ == "__main__":
     settings_kvasir = {
         'path': "/home/rob/Documents/3_projects/bench/kvasir",
@@ -308,19 +411,41 @@ if __name__ == "__main__":
         'num_workers': 1
     }
 
+    settings_coco = {
+        'path': "/home/rob/Documents/3_projects/bench/coco/output",
+        'mask_type': 'multiclass_semantic',
+        'multiclass_palette_path': None,
+        'transforms': {
+            'Resize': (256, 256),
+            'RandomCrop': None,
+            'flip': False,
+            'rot': False,
+            'Normalize': None
+        },
+        'batch_size': 3,
+        'shuffle': True,
+        'num_workers': 1
+    }
+
     fold = 0
     output_path = os.path.join(os.getcwd(), 'outputs')
     epoch = 1
 
     # dataset choice
-    settings = settings_isaid
-    train_loader, test_loader = get_data_loader(settings, fold)
+    settings = settings_coco
+    name = 'coco'
+    train_loader, test_loader = get_data_loader(settings, fold, subset_data=True, name=name)
 
     for images, masks, img_paths, mask_paths in train_loader:
+        print(f'mask type: {settings["mask_type"] }')
         if settings['mask_type'] == 'multiclass_semantic':
-            visualize_multiclass_batch(images, masks, output_path, img_paths,
-                                       epoch, num_images=3,
-                                       palette_path=settings['multiclass_palette_path'])
+            if name == 'coco':
+                visualize_multiclass_batch_with_generated_palette(images, masks, output_path, img_paths,
+                                                                  epoch, num_images=3)
+            else:
+                visualize_multiclass_batch(images, masks, output_path, img_paths,
+                                           epoch, num_images=3,
+                                           palette_path=settings['multiclass_palette_path'])
         elif settings['mask_type'] == 'single_class':
             visualize_batch(images, masks, output_path, epoch, num_images=3)
         else:
