@@ -37,7 +37,11 @@ GitPython==3.1.43
 google-auth==2.26.2
 google-auth-oauthlib==1.2.0
 grpcio==1.60.0
+h11==0.14.0
+httpcore==1.0.5
+httpx==0.27.0
 idna==3.4
+imageio==2.34.2
 importlib-metadata==7.0.1
 importlib-resources==6.1.1
 ipykernel==6.29.0
@@ -56,10 +60,11 @@ jupyter_client==8.6.0
 jupyter_core==5.7.1
 jupyter_server==2.12.5
 jupyter_server_terminals==0.5.2
-jupyterlab==4.0.11
+jupyterlab==4.2.4
 jupyterlab_pygments==0.3.0
-jupyterlab_server==2.25.2
+jupyterlab_server==2.27.3
 kiwisolver==1.4.5
+lazy_loader==0.4
 lightning-utilities==0.10.1
 Markdown==3.5.2
 MarkupSafe==2.1.3
@@ -72,8 +77,10 @@ nbconvert==7.14.2
 nbformat==5.9.2
 nest-asyncio==1.6.0
 networkx==3.0
+notebook==7.2.1
 notebook_shim==0.2.3
 numpy==1.24.1
+numpyencoder==0.3.0
 nvidia-cublas-cu11==11.11.3.6
 nvidia-cublas-cu12==12.1.3.1
 nvidia-cuda-cupti-cu11==11.8.87
@@ -99,6 +106,7 @@ nvidia-nvtx-cu11==11.8.86
 nvidia-nvtx-cu12==12.1.105
 oauthlib==3.2.2
 opencv-python==4.9.0.80
+opencv-python-headless==4.10.0.84
 overrides==7.7.0
 packaging==23.2
 pandas==2.2.2
@@ -115,6 +123,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
 pyasn1==0.5.1
 pyasn1-modules==0.3.0
+pycocotools==2.0.8
 pycparser==2.21
 Pygments==2.17.2
 pyparsing==3.1.1
@@ -130,6 +139,7 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rpds-py==0.17.1
 rsa==4.9
+scikit-image==0.24.0
 scikit-learn==1.4.0
 scipy==1.11.4
 Send2Trash==1.8.2
@@ -145,6 +155,7 @@ tensorboard==2.15.1
 tensorboard-data-server==0.7.2
 terminado==0.18.0
 threadpoolctl==3.2.0
+tifffile==2024.7.24
 tinycss2==1.2.1
 tomli==2.0.1
 torch==2.3.1
