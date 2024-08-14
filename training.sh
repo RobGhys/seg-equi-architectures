@@ -34,7 +34,7 @@ fi
 wandb_api_key=$1
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
-python src/Benchmarks/training/main.py coco UNet_vanilla $SLURM_ARRAY_TASK_ID --save_logs --save_images --location_lucia --wandb_api_key $wandb_api_key
+python src/Benchmarks/training/main.py coco UNet_vanilla $SLURM_ARRAY_TASK_ID --save_logs --location_lucia --wandb_api_key $wandb_api_key
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
 echo "Exiting the program."
