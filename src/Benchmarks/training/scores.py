@@ -119,6 +119,8 @@ class DiceLossMulticlass(nn.Module):
         # Apply softmax to get class probabilities
         inputs = torch.softmax(inputs, dim=1)
         targets = targets.to(inputs.device)
+        if debug:
+            print(f'targets shape: {targets.shape}')
 
         # Create a one-hot encoding of targets
         # shape: bs, num_classes, H, W)

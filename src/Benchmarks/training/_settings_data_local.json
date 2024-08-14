@@ -233,7 +233,7 @@
         "path": "/home/rob/Documents/3_projects/bench/coco/output",
         "multiclass_palette_path": null,
         "in_channels": 3,
-        "n_classes": 92,
+        "n_classes": 93,
         "mask_type": "multiclass_semantic",
         "transforms": {
             "Resize": [
@@ -261,8 +261,8 @@
         "num_workers": 32,
         "models": {
             "input_size": 224,
-            "lr": 0.01,
-            "num_epochs": 5,
+            "lr": 0.001,
+            "num_epochs": 100,
             "UNet_vanilla": {
                 "lbda": 4,
                 "bilinear": true,

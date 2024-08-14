@@ -19,6 +19,11 @@ class CocoStuffDataset(Dataset):
         self.mask_type = mask_type
         self.transforms = transforms
 
+        unique_category_ids = sorted(set(cat['id'] for cat in self.coco.dataset['categories']))
+
+        self.class_remap = {cid: idx + 1 for idx, cid in enumerate(unique_category_ids)}  # +1 to leave 0 for background
+        self.class_remap[0] = 0  # Assuming 0 is the background
+
         if isinstance(self.transforms['Resize'], list):
             self.transforms['Resize'] = tuple(self.transforms['Resize'])
 
@@ -48,7 +53,8 @@ class CocoStuffDataset(Dataset):
             class_id = ann['category_id']
             decoded_mask = self.decode_rle(rle, img_info['height'], img_info['width'])
             decoded_mask_np = np.array(decoded_mask)
-            mask[decoded_mask_np > 0] = class_id
+            remapped_class_id = self.class_remap.get(class_id, 0)  # Map class_id to remapped_class_id
+            mask[decoded_mask_np > 0] = remapped_class_id
 
         mask = Image.fromarray(mask)
 
@@ -97,7 +103,12 @@ class CocoStuffDataset(Dataset):
                 f"Final tensor types and shapes: img -> {type(img)}, shape {img.shape}, mask -> {type(mask)}, shape {mask.shape}")
             print(f'example mask: {mask}')
 
-        data = {'img':img, 'mask': mask, 'img_path': img_path, 'mask_path': ''}
+        data = {
+            'img':img,
+            'mask': mask,
+            'img_path': img_path,
+            'mask_path': ''
+        }
 
         return data
 

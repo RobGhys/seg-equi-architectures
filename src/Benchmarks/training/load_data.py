@@ -168,7 +168,7 @@ def get_data_loader(settings, fold, subset_data: bool = False):
                                  multiclass_palette_path=settings['multiclass_palette_path'])
 
         if subset_data:
-            subset_train_size = 500
+            subset_train_size = 5000
             indices_train = list(range(len(train_data)))
             subset_train_indices = indices_train[:subset_train_size]
 
@@ -179,7 +179,7 @@ def get_data_loader(settings, fold, subset_data: bool = False):
                                       num_workers=settings['num_workers'],
                                       pin_memory=True)
 
-            subset_test_size = 200
+            subset_test_size = 800
             indices_test = list(range(len(test_data)))
             subset_test_indices = indices_test[:subset_test_size]
 
@@ -235,6 +235,19 @@ def get_data_loader(settings, fold, subset_data: bool = False):
             test_sampler = SubsetRandomSampler(subset_test_indices)
             test_loader = DataLoader(test_data,
                                      sampler=test_sampler,
+                                     batch_size=settings['batch_size'],
+                                     num_workers=settings['num_workers'],
+                                     pin_memory=True)
+
+        else:
+            # Create the dataloaders
+            train_loader = DataLoader(train_data,
+                                      batch_size=settings['batch_size'],
+                                      shuffle=settings['shuffle'],
+                                      num_workers=settings['num_workers'],
+                                      pin_memory=True)
+
+            test_loader = DataLoader(test_data,
                                      batch_size=settings['batch_size'],
                                      num_workers=settings['num_workers'],
                                      pin_memory=True)

@@ -233,7 +233,7 @@
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/coco",
         "multiclass_palette_path" : null,
         "in_channels": 3,
-        "n_classes": 92,
+        "n_classes": 93,
         "mask_type": "multiclass_semantic",
         "transforms": {
             "Resize": [224, 224],

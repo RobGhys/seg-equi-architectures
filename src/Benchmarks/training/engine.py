@@ -146,12 +146,23 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
 
     start_time = time()
     for i, (data) in enumerate(data_loader):
-        imgs, masks = data['img'].to(device, dtype=torch.float32), data['mask'].to(device, dtype=torch.long)
+        imgs, masks = data['img'].to(device, dtype=torch.float32), data['mask'].to(device, dtype=torch.long).squeeze(1)
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = model(imgs)
-            print(f'masks_pred shape: {masks_pred.shape}')
-            print(f'masks shape: {masks.shape}')
+            # print(f'masks_pred shape: {masks_pred.shape}')
+            # print(f'masks shape: {masks.shape}')
+            #
+            # if masks.min().item() < 0 or masks.max().item() >= settings['n_classes']:
+            #     raise ValueError(
+            #         f"Invalid target indices: min {masks.min().item()}, max {masks.max().item()} for {settings['n_classes']} classes.")
+            #
+            # # Vérification des indices dans les prédictions
+            # masks_pred_argmax = masks_pred.argmax(dim=1)
+            # if masks_pred_argmax.min().item() < 0 or masks_pred_argmax.max().item() >= settings['n_classes']:
+            #     raise ValueError(
+            #         f"Invalid predicted indices: min {masks_pred_argmax.min().item()}, max {masks_pred_argmax.max().item()} for {settings['n_classes']} classes.")
+
             if settings['n_classes'] > 1:
                 loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
@@ -163,9 +174,9 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             else:  # > 1
                 raise NotImplementedError("Method only available for multilabel segmentation.")
             if combined_loss:
-                loss = loss_ce + loss_dice
+                loss = loss_ce
             else:
-                loss = loss_dice
+                loss = loss_ce
 
         if phase == 'train':
             optimizer.zero_grad(set_to_none=True)
