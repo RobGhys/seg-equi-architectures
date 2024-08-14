@@ -21,7 +21,7 @@ from utils import model_sanity_check, launch_weights_and_biases
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser(description='Train a U-Net model on different preprocessed datasets')
-parser.add_argument('dataset_name', type=str, help='id of the dataset to use', choices=['NucleiSeg', 'kvasir', 'URDE', 'isaid'])
+parser.add_argument('dataset_name', type=str, help='id of the dataset to use', choices=['NucleiSeg', 'kvasir', 'URDE', 'isaid', 'coco'])
 parser.add_argument('model_name', type=str, help='model to use',
                     choices=['UNet_vanilla', 'UNet_bcnn', 'UNet_e2cnn'])
 parser.add_argument('fold', type=int, help='fold to use', choices=[0, 1, 2, 3, 4])
@@ -152,13 +152,13 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
         else:
             scheduler.step(train_results['loss_dice'])
     else:
-        if save_images:
+        if save_images and settings['multiclass_palette_path'] is not None:
             palette_path = settings['multiclass_palette_path']
             with open(palette_path, 'r') as f:
                 color_map = json.load(f)
                 color_map = {int(k): v for k, v in color_map.items()}
         else:
-            palette_path = None
+            color_map = None
         train_results = run_epoch_multiclass_seg(model, train_loader, optimizer, device, settings,
                                                  grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                                  epoch=epoch, save_images=save_images,

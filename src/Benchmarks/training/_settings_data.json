@@ -1,6 +1,8 @@
 {
     "NucleiSeg": {
+        "name": "NucleiSeg",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/NucleiSeg",
+        "annotation_file" : null,
         "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
@@ -55,6 +57,8 @@
         }
     },
     "kvasir": {
+        "name": "kvasir",
+        "annotation_file" : null,
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/kvasir",
         "multiclass_palette_path" : null,
         "in_channels": 3,
@@ -110,6 +114,8 @@
         }
     },
     "URDE": {
+        "name": "URDE",
+        "annotation_file" : null,
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/URDE",
         "multiclass_palette_path" : null,
         "in_channels": 3,
@@ -165,10 +171,69 @@
         }
     },
     "isaid": {
+        "name": "isaid",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/isaid",
+        "annotation_file" : null,
         "multiclass_palette_path" : "/gpfs/projects/acad/bcnn/datasets_bench/isaid/isaid_mask_palette.json",
         "in_channels": 3,
         "n_classes": 16,
+        "mask_type": "multiclass_semantic",
+        "transforms": {
+            "Resize": [224, 224],
+            "RandomCrop": null,
+            "flip": true,
+            "rot": true,
+            "Normalize": [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
+        },
+        "batch_size": 16,
+        "shuffle": true,
+        "num_workers": 8,
+        "models": {
+            "input_size": 224,
+            "lr": 0.0001,
+            "num_epochs": 500,
+            "UNet_vanilla": {
+                "lbda": 2,
+                "bilinear": true,
+                "kernel_size": 3,
+                "acti": "relu",
+                "acti_kwargs": {
+                    "inplace": true
+                }
+            },
+            "UNet_bcnn": {
+                "lbda": 8,
+                "bilinear": true,
+                "reflex_inv": false,
+                "scale_inv": false,
+                "TensorCorePad": true,
+                "cutoff": "strong",
+                "kernel_size": 7,
+                "acti": "tanh",
+                "acti_kwargs": {
+                },
+                "mode": "pure",
+                "bn": false
+            },
+            "UNet_e2cnn": {
+                "lbda": 8,
+                "bilinear": true,
+                "acti": "relu",
+                "acti_kwargs": {
+                    "inplace": true
+                },
+                "kernel_size": 7,
+                "mode": "pure"
+            }
+        }
+    },
+    "coco": {
+        "name": "coco",
+        "annotation_file" : "/gpfs/projects/acad/bcnn/datasets_bench/coco/stuff_train2017.json",
+        "path": "/gpfs/projects/acad/bcnn/datasets_bench/coco",
+        "multiclass_palette_path" : null,
+        "in_channels": 3,
+        "n_classes": 93,
         "mask_type": "multiclass_semantic",
         "transforms": {
             "Resize": [224, 224],
