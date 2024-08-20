@@ -247,19 +247,19 @@
         "num_workers": 8,
         "models": {
             "input_size": 224,
-            "lr": 0.0001,
+            "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 2,
+                "lbda": 16,
                 "bilinear": true,
-                "kernel_size": 3,
+                "kernel_size": 7,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 8,
+                "lbda": 16,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -273,7 +273,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 8,
+                "lbda": 16,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {

@@ -1,12 +1,11 @@
+import os
+import random
 from typing import List
 
-import numpy as np
+import cv2
 import torch
-import random
-import os
-from torchvision.utils import save_image, make_grid
 import wandb
-import json
+from torchvision.utils import save_image, make_grid
 
 
 def overlay_mask(image, mask, color=(1, 1, 1)):
@@ -56,6 +55,57 @@ def denormalize(image, mean=0.5, std=0.5):
         image[c] = image[c] * std + mean
     return image
 
+def visualize_multiclass_batch_with_generated_palette(images: torch.Tensor, masks: torch.Tensor, output_path: str,
+                                                      image_paths: List[str], epoch: int, num_images: int = 3) -> None:
+    unique_classes = torch.unique(masks)
+    color_map = generate_color_palette(len(unique_classes))
+    color_map = {int(k): v for k, v in zip(unique_classes.tolist(), color_map.values())}
+
+    selected_imgs = images[:num_images]
+    selected_masks = masks[:num_images]
+    selected_paths = image_paths[:num_images]
+
+    combined_images: List[torch.Tensor] = []
+
+    for i in range(num_images):
+        img = selected_imgs[i]
+        mask = selected_masks[i].squeeze(0)  # Remove C dim for the mask
+        img_path = selected_paths[i]
+
+        # Convert to color image
+        mask_rgb = torch.zeros((3, mask.shape[0], mask.shape[1]), dtype=torch.uint8)
+        for class_idx, color in color_map.items():
+            mask_rgb[:, mask == class_idx] = torch.tensor(color, dtype=torch.uint8).unsqueeze(1)
+
+        # Denormalize the image and convert to uint8 for OpenCV compatibility
+        img_denorm = (img.clone() * 255).byte().permute(1, 2, 0).numpy()
+
+        # Add the image path text on the image
+        fold_nb = img_path.split('/')[-2]
+        img_nb = img_path.split('/')[-1].split('.png')[0]
+        path_name = fold_nb + '/' + img_nb
+        print(f'image path name: {path_name}')
+        img_with_text = cv2.putText(img_denorm.copy(), path_name, (10, 20), cv2.FONT_HERSHEY_SIMPLEX,
+                                    0.5, (255, 0, 0), 1)
+
+        # Convert img_with_text back to tensor and append to combined_images
+        combined_images.append(torch.tensor(img_with_text).permute(2, 0, 1).float() / 255)
+
+        img_with_mask = torch.tensor(img_with_text).permute(2, 0, 1).float() / 255
+        img_with_mask += mask_rgb.float() / 255.0
+        combined_images.append(img_with_mask)
+
+    combined_images = torch.stack(combined_images)
+
+    grid = make_grid(combined_images, nrow=2)
+    save_image(grid, os.path.join(output_path, 'visualization_multiclass_epoch_{}.png'.format(epoch)))
+
+def generate_color_palette(num_classes: int):
+    random.seed(0)  # Fixing the seed for reproducibility
+    color_palette = {}
+    for i in range(num_classes):
+        color_palette[i] = [random.randint(0, 255) for _ in range(3)]
+    return color_palette
 
 def save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map):
     random_index = random.randint(0, imgs.size(0) - 1)

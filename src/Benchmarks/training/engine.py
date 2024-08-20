@@ -1,4 +1,4 @@
-from src.Benchmarks.training.utils import save_image_output, save_multiclass_image_output
+from src.Benchmarks.training.utils import save_image_output, save_multiclass_image_output, visualize_multiclass_batch_with_generated_palette
 from time import time
 import torch
 import torch.nn.functional as F
@@ -128,8 +128,8 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
 def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
                              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
                              eval_metrics=None,
-                             summary=None, save_img_freq: int = 20, combined_loss=False,
-                             color_map=None):
+                             summary=None, save_img_freq: int = 1, combined_loss=False,
+                             color_map=None, dataset: str = 'default'):
     if phase == 'train':
         model.train()
     else:
@@ -194,9 +194,11 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         epoch_accuracy += accuracy_score.item()
 
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
-            save_multiclass_image_output(imgs, masks, masks_pred,
-                                         output_path, epoch, i,
-                                         color_map=color_map)
+            if dataset == 'coco':
+                visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'], output_path,
+                                                                  data['img_path'], epoch, num_images=3)
+            else:
+                save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map=color_map)
 
     avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
     avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)

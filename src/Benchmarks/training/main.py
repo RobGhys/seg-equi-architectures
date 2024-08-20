@@ -163,13 +163,15 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                                                  grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                                  epoch=epoch, save_images=save_images,
                                                  output_path=output_path, eval_metrics=eval_metrics, summary=summary,
-                                                 combined_loss=combined_loss, color_map=color_map)
+                                                 combined_loss=combined_loss, color_map=color_map,
+                                                 dataset=dataset_name)
 
         eval_results = run_epoch_multiclass_seg(model, test_loader, optimizer, device, settings,
                                                 grad_scaler, use_amp, phase='test', writer=writer, log_wandb=log_wandb,
                                                 epoch=epoch, save_images=save_images,
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
-                                                combined_loss=combined_loss, color_map=color_map)
+                                                combined_loss=combined_loss, color_map=color_map,
+                                                dataset=dataset_name)
 
         print(f'\nEpoch : {epoch} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
