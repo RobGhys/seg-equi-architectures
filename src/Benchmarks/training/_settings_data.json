@@ -41,7 +41,7 @@
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
-                "mode": "pure",
+                "mode": "mixed",
                 "bn": false
             },
             "UNet_e2cnn": {
@@ -52,7 +52,7 @@
                     "inplace": true
                 },
                 "kernel_size": 7,
-                "mode": "pure"
+                "mode": "mixed"
             }
         }
     },
@@ -98,7 +98,7 @@
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
-                "mode": "pure",
+                "mode": "mixed",
                 "bn": false
             },
             "UNet_e2cnn": {
@@ -109,7 +109,7 @@
                     "inplace": true
                 },
                 "kernel_size": 7,
-                "mode": "pure"
+                "mode": "mixed"
             }
         }
     },
@@ -155,7 +155,7 @@
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
-                "mode": "pure",
+                "mode": "mixed",
                 "bn": false
             },
             "UNet_e2cnn": {
@@ -166,7 +166,7 @@
                     "inplace": true
                 },
                 "kernel_size": 7,
-                "mode": "pure"
+                "mode": "mixed"
             }
         }
     },
@@ -212,7 +212,7 @@
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
-                "mode": "pure",
+                "mode": "mixed",
                 "bn": false
             },
             "UNet_e2cnn": {
@@ -223,7 +223,7 @@
                     "inplace": true
                 },
                 "kernel_size": 7,
-                "mode": "pure"
+                "mode": "mixed"
             }
         }
     },
@@ -269,7 +269,7 @@
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
-                "mode": "pure",
+                "mode": "mixed",
                 "bn": false
             },
             "UNet_e2cnn": {
@@ -280,7 +280,7 @@
                     "inplace": true
                 },
                 "kernel_size": 7,
-                "mode": "pure"
+                "mode": "mixed"
             }
         }
     }
