@@ -32,6 +32,10 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = model(imgs)
+
+            #print(f"Min prediction: {masks_pred.min()}, Max prediction: {masks_pred.max()}")
+            #print(f"Min mask value: {masks.min()}, Max mask value: {masks.max()}")
+
             if settings['n_classes'] == 1:
                 masks_pred_bin = (masks_pred > 0.5).float()
 
@@ -68,61 +72,61 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
             save_image_output(imgs, masks, masks_pred, output_path, epoch, i)
 
-        avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
-        avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)
-        avg_epoch_dice_score = epoch_dice_score / len(data_loader)
-        avg_epoch_iou_score = epoch_iou_score / len(data_loader)
-        avg_epoch_precision = epoch_precision / len(data_loader)
-        avg_epoch_recall = epoch_recall / len(data_loader)
-        avg_epoch_accuracy = epoch_accuracy / len(data_loader)
+    avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
+    avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)
+    avg_epoch_dice_score = epoch_dice_score / len(data_loader)
+    avg_epoch_iou_score = epoch_iou_score / len(data_loader)
+    avg_epoch_precision = epoch_precision / len(data_loader)
+    avg_epoch_recall = epoch_recall / len(data_loader)
+    avg_epoch_accuracy = epoch_accuracy / len(data_loader)
 
-        if log_wandb:
-            log_data = {
-                f"CE Loss/{phase}": avg_epoch_loss_ce,
-                f"Dice Loss/{phase}": avg_epoch_loss_dice,
-                f"Total Loss/{phase}": avg_epoch_loss_ce + avg_epoch_loss_dice,
-                f"Dice Score/{phase}": avg_epoch_dice_score,
-                f"Accuracy/{phase}": avg_epoch_accuracy,
-                f"Precision/{phase}": avg_epoch_precision,
-                f"Recall/{phase}": avg_epoch_recall,
-                f"IoU/{phase}": avg_epoch_iou_score
-            }
-            if phase == 'train':
-                log_data["Learning Rate"] = optimizer.param_groups[0]['lr']
-            wandb.log(log_data, step=epoch)
-
-        elif writer:
-            writer.add_scalar(f'Loss/{phase}_ce', avg_epoch_loss_ce, epoch)
-            writer.add_scalar(f'Loss/{phase}_dice', avg_epoch_loss_dice, epoch)
-            writer.add_scalar(f'Loss/{phase}_total', avg_epoch_loss_ce + avg_epoch_loss_dice, epoch)
-            writer.add_scalar(f'Dice/{phase}', avg_epoch_dice_score, epoch)
-            writer.add_scalar(f'IoU/{phase}', avg_epoch_iou_score, epoch)
-            writer.add_scalar(f'Precision/{phase}', avg_epoch_precision, epoch)
-            writer.add_scalar(f'Recall/{phase}', avg_epoch_recall, epoch)
-            writer.add_scalar(f'Accuracy/{phase}', avg_epoch_accuracy, epoch)
-            if phase == 'train':
-                writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
-                writer.add_scalar('Time', time() - start_time, epoch)
-
-        summary[phase]['loss_ce'].append(avg_epoch_loss_ce)
-        summary[phase]['loss_dice'].append(avg_epoch_loss_dice)
-        summary[phase]['dice_score'].append(avg_epoch_dice_score)
-        summary[phase]['IoU_score'].append(avg_epoch_iou_score)
-        summary[phase]['precision_metric'].append(avg_epoch_precision)
-        summary[phase]['recall_metric'].append(avg_epoch_recall)
-        summary[phase]['accuracy_metric'].append(avg_epoch_accuracy)
-        summary[phase]['time'].append(time() - start_time)
-
-        return {
-            'loss_ce': avg_epoch_loss_ce,
-            'loss_dice': avg_epoch_loss_dice,
-            'dice_score': avg_epoch_dice_score,
-            'IoU_score': avg_epoch_iou_score,
-            'precision_metric': avg_epoch_precision,
-            'recall_metric': avg_epoch_recall,
-            'accuracy_metric': avg_epoch_accuracy,
-            'time': time() - start_time
+    if log_wandb:
+        log_data = {
+            f"CE Loss/{phase}": avg_epoch_loss_ce,
+            f"Dice Loss/{phase}": avg_epoch_loss_dice,
+            f"Total Loss/{phase}": avg_epoch_loss_ce + avg_epoch_loss_dice,
+            f"Dice Score/{phase}": avg_epoch_dice_score,
+            f"Accuracy/{phase}": avg_epoch_accuracy,
+            f"Precision/{phase}": avg_epoch_precision,
+            f"Recall/{phase}": avg_epoch_recall,
+            f"IoU/{phase}": avg_epoch_iou_score
         }
+        if phase == 'train':
+            log_data["Learning Rate"] = optimizer.param_groups[0]['lr']
+        wandb.log(log_data, step=epoch)
+
+    elif writer:
+        writer.add_scalar(f'Loss/{phase}_ce', avg_epoch_loss_ce, epoch)
+        writer.add_scalar(f'Loss/{phase}_dice', avg_epoch_loss_dice, epoch)
+        writer.add_scalar(f'Loss/{phase}_total', avg_epoch_loss_ce + avg_epoch_loss_dice, epoch)
+        writer.add_scalar(f'Dice/{phase}', avg_epoch_dice_score, epoch)
+        writer.add_scalar(f'IoU/{phase}', avg_epoch_iou_score, epoch)
+        writer.add_scalar(f'Precision/{phase}', avg_epoch_precision, epoch)
+        writer.add_scalar(f'Recall/{phase}', avg_epoch_recall, epoch)
+        writer.add_scalar(f'Accuracy/{phase}', avg_epoch_accuracy, epoch)
+        if phase == 'train':
+            writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
+            writer.add_scalar('Time', time() - start_time, epoch)
+
+    summary[phase]['loss_ce'].append(avg_epoch_loss_ce)
+    summary[phase]['loss_dice'].append(avg_epoch_loss_dice)
+    summary[phase]['dice_score'].append(avg_epoch_dice_score)
+    summary[phase]['IoU_score'].append(avg_epoch_iou_score)
+    summary[phase]['precision_metric'].append(avg_epoch_precision)
+    summary[phase]['recall_metric'].append(avg_epoch_recall)
+    summary[phase]['accuracy_metric'].append(avg_epoch_accuracy)
+    summary[phase]['time'].append(time() - start_time)
+
+    return {
+        'loss_ce': avg_epoch_loss_ce,
+        'loss_dice': avg_epoch_loss_dice,
+        'dice_score': avg_epoch_dice_score,
+        'IoU_score': avg_epoch_iou_score,
+        'precision_metric': avg_epoch_precision,
+        'recall_metric': avg_epoch_recall,
+        'accuracy_metric': avg_epoch_accuracy,
+        'time': time() - start_time
+    }
 
 
 def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
