@@ -34,6 +34,7 @@ parser.add_argument('--new_model_name', type=str, help='Optional name of the fol
 parser.add_argument('--location_lucia', default=False, help='Data are located on lucia', action='store_true')
 parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
 parser.add_argument('--subset_data', default=False, help='Uses a subset of the Dataset', action='store_true')
+parser.add_argument('--mac', default=False, help='Uses MAC', action='store_true')
 
 dataset_name = parser.parse_args().dataset_name
 model_name = parser.parse_args().model_name
@@ -46,6 +47,7 @@ new_model_name = parser.parse_args().new_model_name
 data_location_lucia = parser.parse_args().location_lucia
 wandb_api_key = parser.parse_args().wandb_api_key
 subset_data = parser.parse_args().subset_data
+mac = parser.parse_args().mac
 
 if new_model_name:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_' + str(fold))
@@ -65,7 +67,7 @@ with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
 
 # Load the data
-train_loader, test_loader = get_data_loader(settings, fold, subset_data)
+train_loader, test_loader = get_data_loader(settings, fold, subset_data, mac=mac)
 
 # Load the model
 model, n_params = getModel(model_name, settings)
@@ -95,7 +97,7 @@ if model.n_classes > 1:
     eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
     eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
 else:
-    eval_metrics['loss_ce'] = nn.BCEWithLogitsLoss(reduction='mean').to(device)
+    eval_metrics['loss_ce'] = nn.BCELoss(reduction='mean').to(device)
     eval_metrics['dice_criterion'] = DiceLoss().to(device)
     eval_metrics['dice_coeff'] = DiceCoeff().to(device)
     eval_metrics['IoU_coeff'] = IoUCoeff().to(device)

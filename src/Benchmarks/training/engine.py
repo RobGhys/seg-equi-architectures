@@ -31,7 +31,7 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
         imgs, masks = data['img'].to(device, dtype=torch.float32), data['mask'].to(device, dtype=torch.float32)
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
-            masks_pred = model(imgs)
+            masks_pred = F.sigmoid(model(imgs))
 
             #print(f"Min prediction: {masks_pred.min()}, Max prediction: {masks_pred.max()}")
             #print(f"Min mask value: {masks.min()}, Max mask value: {masks.max()}")
@@ -41,9 +41,9 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
 
                 loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
-                dice_score = eval_metrics['dice_coeff'](masks_pred, masks)
-                iou_score = eval_metrics['IoU_coeff'](masks_pred, masks)
 
+                dice_score = eval_metrics['dice_coeff'](masks_pred_bin, masks)
+                iou_score = eval_metrics['IoU_coeff'](masks_pred_bin, masks)
                 precision = eval_metrics['precision_metric'](masks_pred_bin, masks)
                 recall = eval_metrics['recall_metric'](masks_pred_bin, masks)
                 accuracy = eval_metrics['accuracy_metric'](masks_pred_bin, masks)
