@@ -65,7 +65,7 @@
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [448, 448],
+            "Resize": [224, 224],
             "RandomCrop": null,
             "flip": true,
             "rot": true,
@@ -81,20 +81,20 @@
             "UNet_vanilla": {
                 "lbda": 2,
                 "bilinear": true,
-                "kernel_size": 3,
+                "kernel_size": 5,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 8,
+                "lbda": 4,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 5,
+                "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -102,13 +102,13 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 8,
+                "lbda": 4,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 5,
+                "kernel_size": 7,
                 "mode": "pure"
             }
         }

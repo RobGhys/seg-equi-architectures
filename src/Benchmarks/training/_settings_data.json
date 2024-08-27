@@ -22,22 +22,22 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 16,
+                "lbda": 2,
                 "bilinear": true,
-                "kernel_size": 7,
+                "kernel_size": 5,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -45,7 +45,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
@@ -79,22 +79,22 @@
             "lr": 0.0001,
             "num_epochs": 150,
             "UNet_vanilla": {
-                "lbda": 16,
+                "lbda": 2,
                 "bilinear": true,
-                "kernel_size": 7,
+                "kernel_size": 5,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -102,7 +102,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
@@ -136,22 +136,22 @@
             "lr": 0.0005,
             "num_epochs": 500,
             "UNet_vanilla": {
-                "lbda": 16,
+                "lbda": 2,
                 "bilinear": true,
-                "kernel_size": 7,
+                "kernel_size": 5,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -159,7 +159,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
@@ -193,22 +193,22 @@
             "lr": 0.0001,
             "num_epochs": 250,
             "UNet_vanilla": {
-                "lbda": 16,
+                "lbda": 2,
                 "bilinear": true,
-                "kernel_size": 3,
+                "kernel_size": 5,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -250,22 +250,22 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 16,
+                "lbda": 2,
                 "bilinear": true,
-                "kernel_size": 7,
+                "kernel_size": 5,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
                 "TensorCorePad": true,
                 "cutoff": "strong",
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
@@ -273,7 +273,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 16,
+                "lbda": 4,
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
