@@ -32,7 +32,9 @@ class PatchDataset(Dataset):
 
         self.mask_type = mask_type
         self.transforms = transforms if transforms is not None else {}
-        self.toggle = True
+
+        self.toggle = 0
+        self.trigger_mask_step = 2 # Force to get a mask with r > t every 2 steps
 
         if isinstance(self.transforms['Resize'], list):
             self.transforms['Resize'] = tuple(self.transforms['Resize'])
@@ -68,7 +70,7 @@ class PatchDataset(Dataset):
             ratios = self.ratios[index]
 
             # Once, get a mask with r > t, once get a mask with r <= t
-            if self.toggle:
+            if self.toggle % self.trigger_mask_step == 0:
                 valid_indices = [i for i, r in enumerate(ratios) if r > self.threshold]
             else:
                 valid_indices = [i for i, r in enumerate(ratios) if r <= self.threshold]
@@ -119,7 +121,7 @@ class PatchDataset(Dataset):
             patch_mask: torch.Tensor = (patch_mask > 0).long()
 
         if self.train_mode:
-            self.toggle = not self.toggle
+            self.toggle += 1
 
         data = {'img': patch_img, 'mask': patch_mask, 'img_path': img_path, 'mask_path': mask_path}
 

@@ -65,7 +65,7 @@
         "n_classes": 1,
         "mask_type": "single_class",
         "transforms": {
-            "Resize": [224, 224],
+            "Resize": [448, 448],
             "RandomCrop": null,
             "flip": true,
             "rot": true,

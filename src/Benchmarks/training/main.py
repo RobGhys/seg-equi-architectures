@@ -66,8 +66,13 @@ else:
 with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
 
+if mac:
+    npz_file = os.path.join(os.path.dirname(settings['path']), 'patch_ratios_fixed.npz')
+else:
+    npz_file = None
+
 # Load the data
-train_loader, test_loader = get_data_loader(settings, fold, subset_data, mac=mac)
+train_loader, test_loader = get_data_loader(settings, fold, subset_data, mac=mac, npz_file=npz_file)
 
 # Load the model
 model, n_params = getModel(model_name, settings)

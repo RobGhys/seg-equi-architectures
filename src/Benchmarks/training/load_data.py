@@ -133,7 +133,9 @@ class BasicDataset(Dataset):
         return len(self.filenames)
 
 
-def get_data_loader(settings, fold, subset_data: bool = False, mac: bool = False):
+def get_data_loader(settings, fold,
+                    subset_data: bool = False, mac: bool = False,
+                    npz_file: str = '/home/rob/Documents/Github/seg-equi-architectures/src/Benchmarks/analysis/patch_ratios_fixed.npz'):
     path = settings['path']
 
     # Get the folds that will be used for training and testing, respectively
@@ -160,7 +162,7 @@ def get_data_loader(settings, fold, subset_data: bool = False, mac: bool = False
                                   threshold=0.5,
                                   mask_type=settings['mask_type'],
                                   transforms=settings['transforms'],
-                                  npz_file='/home/rob/Documents/Github/seg-equi-architectures/src/Benchmarks/analysis/patch_ratios_fixed.npz'
+                                  npz_file=npz_file,
                                   )
         test_data = PatchDataset(dataset_path=path,
                                  filenames=testing_data,
