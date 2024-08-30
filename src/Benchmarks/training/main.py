@@ -35,6 +35,20 @@ parser.add_argument('--location_lucia', default=False, help='Data are located on
 parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
 parser.add_argument('--subset_data', default=False, help='Uses a subset of the Dataset', action='store_true')
 parser.add_argument('--mac', default=False, help='Uses MAC', action='store_true')
+parser.add_argument(
+    "--resume",
+    default="",
+    type=str,
+    metavar="PATH",
+    help="path to latest checkpoint (default: none)",
+)
+parser.add_argument(
+    "--start-epoch",
+    default=0,
+    type=int,
+    metavar="N",
+    help="manual epoch number (useful on restarts)",
+)
 
 dataset_name = parser.parse_args().dataset_name
 model_name = parser.parse_args().model_name
@@ -48,6 +62,8 @@ data_location_lucia = parser.parse_args().location_lucia
 wandb_api_key = parser.parse_args().wandb_api_key
 subset_data = parser.parse_args().subset_data
 mac = parser.parse_args().mac
+resume = parser.parse_args().resume
+start_epoch = parser.parse_args().start_epoch
 
 if new_model_name:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_' + str(fold))
@@ -120,6 +136,24 @@ if save_logs:  # Use Tensorboard only if no wandb_api_key is provided
 else:
     writer = None
 
+if resume:
+    if os.path.isfile(resume):
+        print("=> loading checkpoint '{}'".format(resume))
+        checkpoint = torch.load(resume, map_location=device, weights_only=True)
+        start_epoch = checkpoint["epoch"]
+        model.load_state_dict(checkpoint["state_dict"])
+        model.to(device=device)
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        print(
+            "=> loaded checkpoint '{}' (epoch {})".format(
+                resume, checkpoint["epoch"]
+            )
+        )
+        print(f"Model device after loading checkpoint: {next(model.parameters()).device}")
+        print(f"Optimizer device after loading checkpoint: {device}")
+    else:
+        print("=> no checkpoint found at '{}'".format(resume))
+
 # Train the model
 summary = {
     'n_params': n_params,
@@ -133,7 +167,7 @@ summary = {
     }
 }
 
-for epoch in tqdm(range(settings['models']['num_epochs'])):
+for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
     combined_loss = False
 
     if model.n_classes == 1:
@@ -171,14 +205,14 @@ for epoch in tqdm(range(settings['models']['num_epochs'])):
                                                  epoch=epoch, save_images=save_images,
                                                  output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                  combined_loss=combined_loss, color_map=color_map,
-                                                 dataset=dataset_name)
+                                                 dataset=dataset_name, model_name=model_name)
 
         eval_results = run_epoch_multiclass_seg(model, test_loader, optimizer, device, settings,
                                                 grad_scaler, use_amp, phase='test', writer=writer, log_wandb=log_wandb,
                                                 epoch=epoch, save_images=save_images,
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss, color_map=color_map,
-                                                dataset=dataset_name)
+                                                dataset=dataset_name, model_name=model_name)
 
         print(f'\nEpoch : {epoch} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'

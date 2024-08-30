@@ -1,9 +1,11 @@
+import shutil
+
 from src.Benchmarks.training.utils import save_image_output, save_multiclass_image_output, visualize_multiclass_batch_with_generated_palette
 from time import time
 import torch
 import torch.nn.functional as F
 import wandb
-
+import os
 
 def run_epoch_binary_seg(model, data_loader, optimizer, device,
                          settings, grad_scaler, use_amp,
@@ -133,7 +135,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
                              eval_metrics=None,
                              summary=None, save_img_freq: int = 1, combined_loss=False,
-                             color_map=None, dataset: str = 'default'):
+                             color_map=None, dataset: str = 'default',
+                             model_name: str = 'UNet_vanilla'):
     if phase == 'train':
         model.train()
     else:
@@ -247,6 +250,17 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['accuracy_metric'].append(avg_epoch_accuracy.mean().item())
     summary[phase]['time'].append(time() - start_time)
 
+    # Save checkpoint
+    if (epoch + 1) % 5 == 0:
+        checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(epoch + 1)
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'arch': model_name,
+            'state_dict': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+        }, is_best=False, filename=os.path.join(output_path, checkpoint_name))
+        print(f"Model checkpoint saved at epoch {epoch + 1} to {checkpoint_name}.")
+
     return {
         'loss_ce': avg_epoch_loss_ce,
         'loss_dice': avg_epoch_loss_dice,
@@ -257,3 +271,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         'accuracy_metric': avg_epoch_accuracy.mean().item(),
         'time': time() - start_time
     }
+
+def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+    torch.save(state, filename)
+    if is_best:
+        shutil.copyfile(filename, 'model_best.pth.tar')
