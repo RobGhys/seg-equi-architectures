@@ -63,13 +63,13 @@ class DoubleConv_bcnn(nn.Module):
             self.double_conv = nn.Sequential(
                 BesselConv2d(C_in=in_channels, C_out=mid_channels, k=kernel_size, padding='same', bias=False,
                              reflex_inv=reflex_inv, scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad),
-                #nn.BatchNorm2d(mid_channels),
-                AttentiveNorm2d(mid_channels),
+                nn.BatchNorm2d(mid_channels),
+                #AttentiveNorm2d(mid_channels),
                 acti(**acti_kwargs),
                 BesselConv2d(C_in=mid_channels, C_out=out_channels, k=kernel_size, padding='same', bias=False,
                              reflex_inv=reflex_inv, scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad),
-                #nn.BatchNorm2d(out_channels),
-                AttentiveNorm2d(out_channels),
+                nn.BatchNorm2d(out_channels),
+                #AttentiveNorm2d(out_channels),
                 acti(**acti_kwargs)
             )
 

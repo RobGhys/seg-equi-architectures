@@ -22,20 +22,20 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 2,
+                "lbda": 6,
                 "bilinear": true,
-                "kernel_size": 5,
+                "kernel_size": 3,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 4,
+                "lbda": 10,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
-                "TensorCorePad": true,
+                "TensorCorePad": false,
                 "cutoff": "strong",
                 "kernel_size": 9,
                 "acti": "tanh",
@@ -45,13 +45,14 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4,
+                "lbda": 23,
                 "bilinear": true,
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "mode": "pure"
             }
         }
@@ -79,20 +80,20 @@
             "lr": 0.0001,
             "num_epochs": 150,
             "UNet_vanilla": {
-                "lbda": 2,
+                "lbda": 6,
                 "bilinear": true,
-                "kernel_size": 5,
+                "kernel_size": 3,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 4,
+                "lbda": 10,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
-                "TensorCorePad": true,
+                "TensorCorePad": false,
                 "cutoff": "strong",
                 "kernel_size": 9,
                 "acti": "tanh",
@@ -102,13 +103,14 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4,
+                "lbda": 23,
                 "bilinear": true,
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "mode": "pure"
             }
         }
@@ -136,37 +138,38 @@
             "lr": 0.0005,
             "num_epochs": 500,
             "UNet_vanilla": {
-                "lbda": 2,
+                "lbda": 6,
                 "bilinear": true,
-                "kernel_size": 5,
+                "kernel_size": 3,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 4,
+                "lbda": 10,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
-                "TensorCorePad": true,
+                "TensorCorePad": false,
                 "cutoff": "strong",
                 "kernel_size": 9,
                 "acti": "tanh",
                 "acti_kwargs": {
                 },
-                "mode": "mixed",
+                "mode": "pure",
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4,
+                "lbda": 23,
                 "bilinear": true,
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 7,
-                "mode": "mixed"
+                "kernel_size": 9,
+                "mode": "pure"
             }
         }
     },
@@ -193,20 +196,20 @@
             "lr": 0.0001,
             "num_epochs": 250,
             "UNet_vanilla": {
-                "lbda": 2,
+                "lbda": 6,
                 "bilinear": true,
-                "kernel_size": 5,
+                "kernel_size": 3,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 4,
+                "lbda": 10,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
-                "TensorCorePad": true,
+                "TensorCorePad": false,
                 "cutoff": "strong",
                 "kernel_size": 9,
                 "acti": "tanh",
@@ -216,13 +219,14 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 16,
+                "lbda": 23,
+                "gspace": "C4",
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "mode": "pure"
             }
         }
@@ -250,20 +254,20 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 2,
+                "lbda": 6,
                 "bilinear": true,
-                "kernel_size": 5,
+                "kernel_size": 3,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 }
             },
             "UNet_bcnn": {
-                "lbda": 4,
+                "lbda": 10,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
-                "TensorCorePad": true,
+                "TensorCorePad": false,
                 "cutoff": "strong",
                 "kernel_size": 9,
                 "acti": "tanh",
@@ -273,13 +277,14 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4,
+                "lbda": 23,
+                "gspace": "C4",
                 "bilinear": true,
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
                 },
-                "kernel_size": 7,
+                "kernel_size": 9,
                 "mode": "pure"
             }
         }

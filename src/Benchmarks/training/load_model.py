@@ -1,9 +1,9 @@
 import sys
 import os
 
-
 import torch.nn as nn
 import e2cnn.nn as e2_nn
+from e2cnn import gspaces
 from models import *
 from building_blocks import *
 
@@ -23,6 +23,12 @@ def getModel(model_name, settings):
             acti_kwargs = settings['models'][model_name]['acti_kwargs']
         elif model_name == 'UNet_e2cnn':
             raise NotImplementedError("tanh not implemented for e2cnn")
+    elif settings['models'][model_name]['acti'] == 'softsign':
+        if model_name == 'UNet_vanilla' or model_name == 'UNet_bcnn':
+            acti = nn.Softsign
+            acti_kwargs = settings['models'][model_name]['acti_kwargs']
+        elif model_name == 'UNet_e2cnn':
+            raise NotImplementedError("Softsign not implemented for e2cnn")
     elif settings['models'][model_name]['acti'] == 'elu':
         if model_name == 'UNet_vanilla' or model_name == 'UNet_bcnn':
             acti = nn.ELU
@@ -78,10 +84,18 @@ def getModel(model_name, settings):
         return model, n_params
     
     elif model_name == 'UNet_e2cnn':
+        if settings['models'][model_name]['gspace'] == 'C4':
+            gspace = gspaces.Rot2dOnR2(N=4)
+        elif settings['models'][model_name]['gspace'] == 'C8':
+            gspace = gspaces.Rot2dOnR2(N=8)
+        elif settings['models'][model_name]['gspace'] == 'D4':
+            gspace = gspaces.FlipRot2dOnR2(N=4)
+        else:
+            raise NotImplementedError("gspace should be C4, C8 or D4")
         model = UNet_e2cnn(settings['in_channels'], settings['n_classes'],
                            lbda=settings['models'][model_name]['lbda'], acti=acti, 
                            acti_kwargs=acti_kwargs, bilinear=settings['models'][model_name]['bilinear'],
                            kernel_size=settings['models'][model_name]['kernel_size'],
-                           mode=settings['models'][model_name]['mode'])
+                           mode=settings['models'][model_name]['mode'], gspace=gspace)
         n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         return model, n_params

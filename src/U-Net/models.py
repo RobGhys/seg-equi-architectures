@@ -1,6 +1,7 @@
 """ Full assembly of the parts to form the complete network """
 
 from building_blocks import *
+import math
 
 
 class UNet_vanilla(nn.Module):
@@ -11,26 +12,30 @@ class UNet_vanilla(nn.Module):
         self.n_classes = n_classes
         self.bilinear = bilinear
 
-        self.inc = (DoubleConv_vanilla(n_channels, 64//lbda, acti=acti, 
+        self.inc = (DoubleConv_vanilla(n_channels, math.ceil(64/lbda / 2.) * 2, acti=acti, 
                                        acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.down1 = (Down_vanilla(64//lbda, 128//lbda, acti=acti, 
+        self.down1 = (Down_vanilla(math.ceil(64/lbda / 2.) * 2, math.ceil(128/lbda / 2.) * 2, acti=acti, 
                                    acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.down2 = (Down_vanilla(128//lbda, 256//lbda, acti=acti, 
+        self.down2 = (Down_vanilla(math.ceil(128/lbda / 2.) * 2, math.ceil(256/lbda / 2.) * 2, acti=acti, 
                                    acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.down3 = (Down_vanilla(256//lbda, 512//lbda, acti=acti, 
+        self.down3 = (Down_vanilla(math.ceil(256/lbda / 2.) * 2, math.ceil(512/lbda / 2.) * 2, acti=acti, 
                                    acti_kwargs=acti_kwargs, kernel_size=kernel_size))
         factor = 2 if bilinear else 1
-        self.down4 = (Down_vanilla(512//lbda, 1024//lbda // factor, acti=acti, 
+        self.down4 = (Down_vanilla(math.ceil(512/lbda / 2.) * 2, math.ceil(1024/lbda / 2.) * 2 // factor, acti=acti, 
                                    acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.up1 = (Up_vanilla(1024//lbda, 512//lbda // factor, bilinear, acti=acti, 
+        self.up1 = (Up_vanilla(math.ceil(1024/lbda / 2.) * 2 // factor + math.ceil(512/lbda / 2.) * 2, 
+                               math.ceil(512/lbda / 2.) * 2 // factor, bilinear, acti=acti, 
                                acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.up2 = (Up_vanilla(512//lbda, 256//lbda // factor, bilinear, acti=acti, 
+        self.up2 = (Up_vanilla(math.ceil(512/lbda / 2.) * 2 // factor + math.ceil(256/lbda / 2.) * 2, 
+                               math.ceil(256/lbda / 2.) * 2 // factor, bilinear, acti=acti, 
                                acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.up3 = (Up_vanilla(256//lbda, 128//lbda // factor, bilinear, acti=acti, 
+        self.up3 = (Up_vanilla(math.ceil(256/lbda / 2.) * 2 // factor + math.ceil(128/lbda / 2.) * 2, 
+                               math.ceil(128/lbda / 2.) * 2 // factor, bilinear, acti=acti, 
                                acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.up4 = (Up_vanilla(128//lbda, 64//lbda, bilinear, acti=acti, 
+        self.up4 = (Up_vanilla(math.ceil(128/lbda / 2.) * 2 // factor + math.ceil(64/lbda / 2.) * 2, 
+                               math.ceil(64/lbda / 2.) * 2, bilinear, acti=acti, 
                                acti_kwargs=acti_kwargs, kernel_size=kernel_size))
-        self.outc = (OutConv(64//lbda, n_classes))
+        self.outc = (OutConv(math.ceil(64/lbda / 2.) * 2, n_classes))
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -66,27 +71,31 @@ class UNet_bcnn(nn.Module):
         else:
             raise ValueError("Unknown mode: should be 'pure' or 'mixed'")
 
-        self.inc = (DoubleConv_bcnn(n_channels, int(64/lbda), reflex_inv=reflex_inv, bn=bn,
+        self.inc = (DoubleConv_bcnn(n_channels, math.ceil(64/lbda / 2.) * 2, reflex_inv=reflex_inv, bn=bn,
                                     scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad,
                                     kernel_size=kernel_size, acti=acti, acti_kwargs=acti_kwargs))
-        self.down1 = (Down_bcnn(int(64/lbda), int(128/lbda), reflex_inv=reflex_inv, bn=bn, 
+        self.down1 = (Down_bcnn(math.ceil(64/lbda / 2.) * 2, math.ceil(128/lbda / 2.) * 2, reflex_inv=reflex_inv, bn=bn, 
                                 scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad,
                                 kernel_size=kernel_size, acti=acti, acti_kwargs=acti_kwargs))
-        self.down2 = (Down_bcnn(int(128/lbda), int(256/lbda), reflex_inv=reflex_inv, bn=bn, 
+        self.down2 = (Down_bcnn(math.ceil(128/lbda / 2.) * 2, math.ceil(256/lbda / 2.) * 2, reflex_inv=reflex_inv, bn=bn, 
                                 scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad,
                                 kernel_size=kernel_size, acti=acti, acti_kwargs=acti_kwargs))
-        self.down3 = (Down_bcnn(int(256/lbda), int(512/lbda), reflex_inv=reflex_inv, bn=bn, 
+        self.down3 = (Down_bcnn(math.ceil(256/lbda / 2.) * 2, math.ceil(512/lbda / 2.) * 2, reflex_inv=reflex_inv, bn=bn, 
                                 scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad,
                                 kernel_size=kernel_size, acti=acti, acti_kwargs=acti_kwargs))
         factor = 2 if bilinear else 1
-        self.down4 = (Down_bcnn(int(512/lbda), int(1024/lbda) // factor, reflex_inv=reflex_inv, 
+        self.down4 = (Down_bcnn(math.ceil(512/lbda / 2.) * 2, math.ceil(1024/lbda / 2.) * 2 // factor, reflex_inv=reflex_inv, 
                                 scale_inv=scale_inv, cutoff=cutoff, TensorCorePad=TensorCorePad,
                                 kernel_size=kernel_size, acti=acti, acti_kwargs=acti_kwargs, bn=bn))
-        self.up1 = (Up(int(1024/lbda), int(512/lbda) // factor, bilinear, **kwargs))
-        self.up2 = (Up(int(512/lbda), int(256/lbda) // factor, bilinear, **kwargs))
-        self.up3 = (Up(int(256/lbda), int(128/lbda) // factor, bilinear, **kwargs))
-        self.up4 = (Up(int(128/lbda), int(64/lbda), bilinear, **kwargs))
-        self.outc = (OutConv(int(64/lbda), n_classes))
+        self.up1 = (Up(math.ceil(1024/lbda / 2.) * 2 // factor + math.ceil(512/lbda / 2.) * 2, 
+                       math.ceil(512/lbda / 2.) * 2 // factor, bilinear, **kwargs))
+        self.up2 = (Up(math.ceil(512/lbda / 2.) * 2 // factor + math.ceil(256/lbda / 2.) * 2, 
+                       math.ceil(256/lbda / 2.) * 2 // factor, bilinear, **kwargs))
+        self.up3 = (Up(math.ceil(256/lbda / 2.) * 2 // factor + math.ceil(128/lbda / 2.) * 2, 
+                       math.ceil(128/lbda / 2.) * 2 // factor, bilinear, **kwargs))
+        self.up4 = (Up(math.ceil(128/lbda / 2.) * 2 // factor + math.ceil(64/lbda / 2.) * 2, 
+                       math.ceil(64/lbda / 2.) * 2, bilinear, **kwargs))
+        self.outc = (OutConv(math.ceil(64/lbda / 2.) * 2, n_classes))
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -123,26 +132,30 @@ class UNet_e2cnn(nn.Module):
         else:
             raise ValueError("Unknown mode: should be 'pure' or 'mixed'")
 
-        self.inc = DoubleConv_e2cnn(n_channels, 64//lbda, first=True, acti=acti, 
+        self.inc = DoubleConv_e2cnn(n_channels, math.ceil(64/lbda / 2.) * 2, first=True, acti=acti, 
                                     acti_kwargs=acti_kwargs, gspace=gspace, kernel_size=kernel_size)
-        self.down1 = Down_e2cnn(64//lbda, 128//lbda, acti=acti, acti_kwargs=acti_kwargs, 
+        self.down1 = Down_e2cnn(math.ceil(64/lbda / 2.) * 2, math.ceil(128/lbda / 2.) * 2, acti=acti, acti_kwargs=acti_kwargs, 
                                  gspace=gspace, kernel_size=kernel_size)
-        self.down2 = Down_e2cnn(128//lbda, 256//lbda, acti=acti, acti_kwargs=acti_kwargs,
+        self.down2 = Down_e2cnn(math.ceil(128/lbda / 2.) * 2, math.ceil(256/lbda / 2.) * 2, acti=acti, acti_kwargs=acti_kwargs,
                                  gspace=gspace, kernel_size=kernel_size)
-        self.down3 = Down_e2cnn(256//lbda, 512//lbda, acti=acti, acti_kwargs=acti_kwargs,
+        self.down3 = Down_e2cnn(math.ceil(256/lbda / 2.) * 2, math.ceil(512/lbda / 2.) * 2, acti=acti, acti_kwargs=acti_kwargs,
                                  gspace=gspace, kernel_size=kernel_size)
         factor = 2 if bilinear else 1
-        self.down4 = Down_e2cnn(512//lbda, 1024//lbda // factor, acti=acti, acti_kwargs=acti_kwargs,
+        self.down4 = Down_e2cnn(math.ceil(512/lbda / 2.) * 2, math.ceil(1024/lbda / 2.) * 2 // factor, acti=acti, acti_kwargs=acti_kwargs,
                                  gspace=gspace, kernel_size=kernel_size)
-        self.up1 = Up(1024//lbda, 512//lbda // factor, bilinear, **kwargs)
-        self.up2 = Up(512//lbda, 256//lbda // factor, bilinear, **kwargs)
-        self.up3 = Up(256//lbda, 128//lbda // factor, bilinear, **kwargs)
-        self.up4 = Up(128//lbda, 64//lbda, bilinear, **kwargs)
+        self.up1 = Up(math.ceil(1024/lbda / 2.) * 2 // factor + math.ceil(512/lbda / 2.) * 2, 
+                       math.ceil(512/lbda / 2.) * 2 // factor, bilinear, **kwargs)
+        self.up2 = Up(math.ceil(512/lbda / 2.) * 2 // factor + math.ceil(256/lbda / 2.) * 2, 
+                       math.ceil(256/lbda / 2.) * 2 // factor, bilinear, **kwargs)
+        self.up3 = Up(math.ceil(256/lbda / 2.) * 2 // factor + math.ceil(128/lbda / 2.) * 2, 
+                       math.ceil(128/lbda / 2.) * 2 // factor, bilinear, **kwargs)
+        self.up4 = Up(math.ceil(128/lbda / 2.) * 2 // factor + math.ceil(64/lbda / 2.) * 2, 
+                       math.ceil(64/lbda / 2.) * 2, bilinear, **kwargs)
 
-        in_type = e2_nn.FieldType(gspace, 64//lbda*[gspace.regular_repr])
+        in_type = e2_nn.FieldType(gspace, math.ceil(64/lbda / 2.) * 2*[gspace.regular_repr])
         self.convert = ConvertToTensor(in_type)
 
-        self.outc = (OutConv(64//lbda, n_classes))
+        self.outc = (OutConv(math.ceil(64/lbda / 2.) * 2, n_classes))
 
     def forward(self, x):
         x1, x1_out_type = self.inc(x)
