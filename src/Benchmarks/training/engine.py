@@ -145,12 +145,11 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     epoch_loss_ce = 0
     epoch_loss_dice = 0
 
-    epoch_iou_score = torch.zeros(settings['n_classes'])
-    #epoch_f1_score = torch.zeros(settings['n_classes'])
-    epoch_recall = torch.zeros(settings['n_classes'])
-    epoch_precision = torch.zeros(settings['n_classes'])
-    epoch_accuracy = torch.zeros(settings['n_classes'])
-    epoch_average_precision = torch.zeros(settings['n_classes'])
+    epoch_iou_score = torch.zeros(settings['n_classes'], device=device)
+    epoch_recall = torch.zeros(settings['n_classes'], device=device)
+    epoch_precision = torch.zeros(settings['n_classes'], device=device)
+    epoch_accuracy = torch.zeros(settings['n_classes'], device=device)
+    epoch_average_precision = torch.zeros(settings['n_classes'], device=device)
 
     start_time = time()
     for i, (data) in enumerate(data_loader):
@@ -231,6 +230,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         writer.add_scalar(f'Recall/{phase}', avg_epoch_recall.mean().item(), epoch)
         writer.add_scalar(f'Precision/{phase}', avg_epoch_precision.mean().item(), epoch)
         writer.add_scalar(f'Accuracy/{phase}', avg_epoch_accuracy.mean().item(), epoch)
+        writer.add_scalar(f'Average_Precision/{phase}', avg_epoch_average_precision.mean().item(), epoch)
+
         if phase == 'train':
             writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
             writer.add_scalar('Time', time() - start_time, epoch)
