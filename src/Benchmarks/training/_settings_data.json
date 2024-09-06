@@ -19,7 +19,7 @@
         "num_workers": 8,
         "models": {
             "input_size": 224,
-            "lr": 0.001,
+            "lr": 0.0001,
             "num_epochs": 200,
             "UNet_vanilla": {
                 "lbda": 6,

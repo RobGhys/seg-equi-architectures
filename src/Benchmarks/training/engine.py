@@ -150,6 +150,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     epoch_recall = torch.zeros(settings['n_classes'])
     epoch_precision = torch.zeros(settings['n_classes'])
     epoch_accuracy = torch.zeros(settings['n_classes'])
+    epoch_average_precision = torch.zeros(settings['n_classes'])
 
     start_time = time()
     for i, (data) in enumerate(data_loader):
@@ -157,18 +158,6 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
 
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = model(imgs)
-            # print(f'masks_pred shape: {masks_pred.shape}')
-            # print(f'masks shape: {masks.shape}')
-            #
-            # if masks.min().item() < 0 or masks.max().item() >= settings['n_classes']:
-            #     raise ValueError(
-            #         f"Invalid target indices: min {masks.min().item()}, max {masks.max().item()} for {settings['n_classes']} classes.")
-            #
-            # # Vérification des indices dans les prédictions
-            # masks_pred_argmax = masks_pred.argmax(dim=1)
-            # if masks_pred_argmax.min().item() < 0 or masks_pred_argmax.max().item() >= settings['n_classes']:
-            #     raise ValueError(
-            #         f"Invalid predicted indices: min {masks_pred_argmax.min().item()}, max {masks_pred_argmax.max().item()} for {settings['n_classes']} classes.")
 
             if settings['n_classes'] > 1:
                 loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
@@ -176,6 +165,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                 iou_score = eval_metrics['IoU_score'](masks_pred, masks)
                 #f1_score = eval_metrics['f1_score'](masks_pred, masks)
                 recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                average_precision = eval_metrics['average_precision'](masks_pred, masks)
+
                 precision_score = eval_metrics['precision_metric'](masks_pred, masks)
                 accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
             else:  # > 1
@@ -198,6 +189,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         #epoch_f1_score += f1_score.item()
         epoch_recall += recall_score.item()
         epoch_precision += precision_score.item()
+        epoch_average_precision += average_precision.item()
         epoch_accuracy += accuracy_score.item()
 
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
@@ -214,6 +206,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     avg_epoch_recall = epoch_recall / len(data_loader)
     avg_epoch_precision = epoch_precision / len(data_loader)
     avg_epoch_accuracy = epoch_accuracy / len(data_loader)
+    avg_epoch_average_precision = epoch_average_precision / len(data_loader)
 
     if log_wandb:
         log_data = {
@@ -223,7 +216,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             #f"F1 Score/{phase}": avg_epoch_f1_score.mean().item(),
             f"Recall/{phase}": avg_epoch_recall.mean().item(),
             f"Precision/{phase}": avg_epoch_precision.mean().item(),
-            f"Accuracy/{phase}": avg_epoch_accuracy.mean().item()
+            f"Accuracy/{phase}": avg_epoch_accuracy.mean().item(),
+            f"Average_Precision/{phase}": avg_epoch_average_precision.mean().item()
         }
         if phase == 'train':
             log_data["Learning Rate"] = optimizer.param_groups[0]['lr']
@@ -248,6 +242,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['recall_metric'].append(avg_epoch_recall.mean().item())
     summary[phase]['precision_metric'].append(avg_epoch_precision.mean().item())
     summary[phase]['accuracy_metric'].append(avg_epoch_accuracy.mean().item())
+    summary[phase]['average_precision'].append(avg_epoch_average_precision.mean().item())
     summary[phase]['time'].append(time() - start_time)
 
     # Save checkpoint
@@ -269,6 +264,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         'recall_metric': avg_epoch_recall.mean().item(),
         'precision_metric': avg_epoch_precision.mean().item(),
         'accuracy_metric': avg_epoch_accuracy.mean().item(),
+        'average_precision': avg_epoch_average_precision.mean().item(),
+
         'time': time() - start_time
     }
 

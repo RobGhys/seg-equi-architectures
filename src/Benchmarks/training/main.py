@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from torch import optim
-from torchmetrics.classification import JaccardIndex, MulticlassF1Score, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy
+from torchmetrics.classification import JaccardIndex, MulticlassF1Score, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy, AveragePrecision
 
 from tqdm import tqdm
 
@@ -113,6 +113,7 @@ if model.n_classes > 1:
     eval_metrics['loss_ce'] = nn.CrossEntropyLoss().to(device)
     eval_metrics['dice_criterion'] = DiceLossMulticlass().to(device)
     eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
+    eval_metrics['average_precision'] = AveragePrecision(task='multiclass', num_classes=settings['n_classes']).to(device)
     #eval_metrics['f1_score'] = MulticlassF1Score(num_classes=settings['n_classes']).to(device)
     eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
     eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
