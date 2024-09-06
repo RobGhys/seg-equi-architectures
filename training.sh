@@ -41,7 +41,8 @@ $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --save_images \
 --location_lucia \
---wandb_api_key $wandb_api_key \
+--wandb_api_key $wandb_api_key
+
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
 echo "Exiting the program."
