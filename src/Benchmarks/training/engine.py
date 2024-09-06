@@ -130,6 +130,16 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
         'time': time() - start_time
     }
 
+def safe_metric(metric_fn, masks_pred, masks, n_classes):
+    try:
+        score = metric_fn(masks_pred, masks)
+        # Replace NaN values with zero or another appropriate value
+        if torch.isnan(score).any():
+            score = torch.nan_to_num(score, nan=0.0)  # or handle differently based on context
+    except Exception as e:
+        print(f"Error in metric calculation: {e}")
+        score = torch.zeros(n_classes, device=masks_pred.device)  # Default to zeros
+    return score
 
 def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
                              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
@@ -161,12 +171,10 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             if settings['n_classes'] > 1:
                 loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
-                iou_score = eval_metrics['IoU_score'](masks_pred, masks)
-                #f1_score = eval_metrics['f1_score'](masks_pred, masks)
-                recall_score = eval_metrics['recall_metric'](masks_pred, masks)
-                average_precision = eval_metrics['average_precision'](masks_pred, masks)
-
-                precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                iou_score = safe_metric(eval_metrics['IoU_score'], masks_pred, masks, settings['n_classes'])
+                recall_score = safe_metric(eval_metrics['recall_metric'], masks_pred, masks, settings['n_classes'])
+                average_precision = safe_metric(eval_metrics['average_precision'], masks_pred, masks, settings['n_classes'])
+                precision_score = safe_metric(eval_metrics['precision_metric'], masks_pred, masks, settings['n_classes'])
                 accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
             else:  # > 1
                 raise NotImplementedError("Method only available for multilabel segmentation.")
@@ -184,11 +192,10 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
 
         epoch_loss_ce += loss_ce.item()
         epoch_loss_dice += loss_dice.item()
-        epoch_iou_score += iou_score.item()
-        #epoch_f1_score += f1_score.item()
-        epoch_recall += recall_score.item()
-        epoch_precision += precision_score.item()
-        epoch_average_precision += average_precision.item()
+        epoch_iou_score += torch.nan_to_num(iou_score, nan=0.0).item()
+        epoch_recall += torch.nan_to_num(recall_score, nan=0.0).item()
+        epoch_precision += torch.nan_to_num(precision_score, nan=0.0).item()
+        epoch_average_precision += torch.nan_to_num(average_precision, nan=0.0).item()
         epoch_accuracy += accuracy_score.item()
 
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
