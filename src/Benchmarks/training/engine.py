@@ -160,9 +160,13 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                 loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
                 iou_score = eval_metrics['IoU_score'](masks_pred, masks)
                 recall_score = eval_metrics['recall_metric'](masks_pred, masks)
-                average_precision = eval_metrics['average_precision'](masks_pred, masks)
                 precision_score = eval_metrics['precision_metric'](masks_pred, masks)
                 accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
+
+                masks_pred_cpu = masks_pred.detach().cpu()
+                masks_cpu = masks.detach().cpu()
+
+                average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
             else:
                 raise NotImplementedError("Method only available for multilabel segmentation.")
             loss = loss_ce if combined_loss else loss_ce
@@ -182,8 +186,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         epoch_recall += recall_score.item()
         epoch_precision += precision_score.item()
         epoch_accuracy += accuracy_score.item()
-        if not torch.isnan(average_precision).any():
-            epoch_average_precision += average_precision.item()
+        #if not torch.isnan(average_precision).any():
+        epoch_average_precision += average_precision.item()
 
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
             if dataset == 'coco':
