@@ -129,6 +129,7 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
         'accuracy_metric': avg_epoch_accuracy,
         'time': time() - start_time
     }
+
 def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
                              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
                              eval_metrics=None, summary=None, save_img_freq: int = 1, combined_loss=False,
@@ -151,58 +152,41 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     for i, (data) in enumerate(data_loader):
         imgs, masks = data['img'].to(device, dtype=torch.float32), data['mask'].to(device, dtype=torch.long).squeeze(1)
 
-        # Effectuer l'inférence avec suivi des gradients pour les calculs de perte
         with torch.autocast(device.type if device.type != 'mps' else 'cpu', enabled=use_amp):
             masks_pred = model(imgs)
-            # Calculer les pertes avec suivi des gradients
-            loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
-            loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
 
-        # Calculer la perte à utiliser pour l'optimisation
-        loss = loss_ce if combined_loss else loss_ce
+            if settings['n_classes'] > 1:
+                loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
+                loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
+                iou_score = eval_metrics['IoU_score'](masks_pred, masks)
+                recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
+
+
+                #average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
+            else:
+                raise NotImplementedError("Method only available for multilabel segmentation.")
+            loss = loss_ce if combined_loss else loss_ce
 
         if phase == 'train':
             optimizer.zero_grad(set_to_none=True)
-            # Rétropropagation avec la perte
             grad_scaler.scale(loss).backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             grad_scaler.step(optimizer)
             grad_scaler.update()
 
-        # Détacher les prédictions et les cibles pour le calcul des métriques sur le CPU
-        masks_pred_cpu = masks_pred.detach().cpu()
-        masks_cpu = masks.detach().cpu()
 
-        # Nettoyer le cache GPU pour libérer de la mémoire
-        torch.cuda.empty_cache()
-
-        # Calculer les métriques sur le CPU, sans gradients
-        with torch.no_grad():
-            eval_metrics['IoU_score'] = eval_metrics['IoU_score'].to('cpu')
-            eval_metrics['recall_metric'] = eval_metrics['recall_metric'].to('cpu')
-            eval_metrics['precision_metric'] = eval_metrics['precision_metric'].to('cpu')
-            eval_metrics['accuracy_metric'] = eval_metrics['accuracy_metric'].to('cpu')
-            eval_metrics['average_precision'] = eval_metrics['average_precision'].to('cpu')
-
-            iou_score = eval_metrics['IoU_score'](masks_pred_cpu, masks_cpu)
-            recall_score = eval_metrics['recall_metric'](masks_pred_cpu, masks_cpu)
-            precision_score = eval_metrics['precision_metric'](masks_pred_cpu, masks_cpu)
-            accuracy_score = eval_metrics['accuracy_metric'](masks_pred_cpu, masks_cpu)
-            average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
-
-        # Accumuler les métriques pour chaque batch
         epoch_loss_ce += loss_ce.item()
         epoch_loss_dice += loss_dice.item()
         epoch_iou_score += iou_score.item()
+        #epoch_f1_score += f1_score.item()
         epoch_recall += recall_score.item()
         epoch_precision += precision_score.item()
         epoch_accuracy += accuracy_score.item()
+        #if not torch.isnan(average_precision).any():
+        #epoch_average_precision += average_precision.item()
 
-        # Ajouter average_precision si ce n’est pas NaN
-        if not torch.isnan(average_precision).any():
-            epoch_average_precision += average_precision.item()
-
-        # Sauvegarder les images si requis
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
             if dataset == 'coco':
                 visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'], output_path,
@@ -210,16 +194,15 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             else:
                 save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map=color_map)
 
-    # Calculer les moyennes des métriques pour l'époque
+
     avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
     avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)
     avg_epoch_iou_score = epoch_iou_score / len(data_loader)
     avg_epoch_recall = epoch_recall / len(data_loader)
     avg_epoch_precision = epoch_precision / len(data_loader)
     avg_epoch_accuracy = epoch_accuracy / len(data_loader)
-    avg_epoch_average_precision = epoch_average_precision / len(data_loader)
+    #avg_epoch_average_precision = epoch_average_precision / len(data_loader)
 
-    # Log des résultats
     if log_wandb:
         log_data = {
             f"CE Loss/{phase}": avg_epoch_loss_ce,
@@ -228,7 +211,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             f"Recall/{phase}": avg_epoch_recall,
             f"Precision/{phase}": avg_epoch_precision,
             f"Accuracy/{phase}": avg_epoch_accuracy,
-            f"Average_Precision/{phase}": avg_epoch_average_precision
+            #f"Average_Precision/{phase}": avg_epoch_average_precision
         }
         if phase == 'train':
             log_data["Learning Rate"] = optimizer.param_groups[0]['lr']
@@ -241,7 +224,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         writer.add_scalar(f'Recall/{phase}', avg_epoch_recall, epoch)
         writer.add_scalar(f'Precision/{phase}', avg_epoch_precision, epoch)
         writer.add_scalar(f'Accuracy/{phase}', avg_epoch_accuracy, epoch)
-        writer.add_scalar(f'Average_Precision/{phase}', avg_epoch_average_precision, epoch)
+        #writer.add_scalar(f'Average_Precision/{phase}', avg_epoch_average_precision, epoch)
 
         if phase == 'train':
             writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
@@ -253,10 +236,10 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['recall_metric'].append(avg_epoch_recall)
     summary[phase]['precision_metric'].append(avg_epoch_precision)
     summary[phase]['accuracy_metric'].append(avg_epoch_accuracy)
-    summary[phase]['average_precision'].append(avg_epoch_average_precision)
+    #summary[phase]['average_precision'].append(avg_epoch_average_precision)
     summary[phase]['time'].append(time() - start_time)
 
-    # Sauvegarde des checkpoints
+    # Save checkpoint
     if (epoch + 1) % 5 == 0:
         checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(epoch + 1)
         save_checkpoint({
@@ -274,7 +257,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         'recall_metric': avg_epoch_recall,
         'precision_metric': avg_epoch_precision,
         'accuracy_metric': avg_epoch_accuracy,
-        'average_precision': avg_epoch_average_precision,
+        #'average_precision': avg_epoch_average_precision,
         'time': time() - start_time
     }
 
