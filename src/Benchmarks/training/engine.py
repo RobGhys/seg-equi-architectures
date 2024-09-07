@@ -182,7 +182,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         epoch_recall += recall_score.item()
         epoch_precision += precision_score.item()
         epoch_accuracy += accuracy_score.item()
-        epoch_average_precision += average_precision.item()
+        if not torch.isnan(average_precision).any():
+            epoch_average_precision += average_precision.item()
 
         if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
             if dataset == 'coco':
