@@ -160,18 +160,23 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
 
             torch.cuda.empty_cache()
 
-            if settings['n_classes'] > 1:
-                with torch.no_grad():
-                    loss_ce = eval_metrics['loss_ce'](masks_pred_cpu, masks_cpu)
-                    loss_dice = eval_metrics['dice_criterion'](masks_pred_cpu, masks_cpu)
-                    iou_score = eval_metrics['IoU_score'](masks_pred_cpu, masks_cpu)
-                    recall_score = eval_metrics['recall_metric'](masks_pred_cpu, masks_cpu)
-                    precision_score = eval_metrics['precision_metric'](masks_pred_cpu, masks_cpu)
-                    accuracy_score = eval_metrics['accuracy_metric'](masks_pred_cpu, masks_cpu)
-                    average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
+            eval_metrics['loss_ce'] = eval_metrics['loss_ce'].to('cpu')
+            eval_metrics['dice_criterion'] = eval_metrics['dice_criterion'].to('cpu')
+            eval_metrics['IoU_score'] = eval_metrics['IoU_score'].to('cpu')
+            eval_metrics['recall_metric'] = eval_metrics['recall_metric'].to('cpu')
+            eval_metrics['precision_metric'] = eval_metrics['precision_metric'].to('cpu')
+            eval_metrics['accuracy_metric'] = eval_metrics['accuracy_metric'].to('cpu')
+            eval_metrics['average_precision'] = eval_metrics['average_precision'].to('cpu')
 
-            else:
-                raise NotImplementedError("Method only available for multilabel segmentation.")
+            with torch.no_grad():
+                loss_ce = eval_metrics['loss_ce'](masks_pred_cpu, masks_cpu)
+                loss_dice = eval_metrics['dice_criterion'](masks_pred_cpu, masks_cpu)
+                iou_score = eval_metrics['IoU_score'](masks_pred_cpu, masks_cpu)
+                recall_score = eval_metrics['recall_metric'](masks_pred_cpu, masks_cpu)
+                precision_score = eval_metrics['precision_metric'](masks_pred_cpu, masks_cpu)
+                accuracy_score = eval_metrics['accuracy_metric'](masks_pred_cpu, masks_cpu)
+                average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
+
             loss = loss_ce if combined_loss else loss_ce
 
         if phase == 'train':
