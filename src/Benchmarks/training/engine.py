@@ -240,7 +240,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['time'].append(time() - start_time)
 
     # Save checkpoint
-    if (epoch + 1) % 5 == 0:
+    if (epoch + 1) % 100 == 0:
         checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(epoch + 1)
         save_checkpoint({
             'epoch': epoch + 1,
