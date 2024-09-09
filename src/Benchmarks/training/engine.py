@@ -159,15 +159,11 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                         loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                         loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
 
-                        # Use cpu
-                        masks_pred_cpu = masks_pred.cpu()
-                        masks_cpu = masks.cpu()
-
-                        iou_score = eval_metrics['IoU_score'](masks_pred_cpu, masks_cpu)
-                        recall_score = eval_metrics['recall_metric'](masks_pred_cpu, masks_cpu)
-                        precision_score = eval_metrics['precision_metric'](masks_pred_cpu, masks_cpu)
-                        accuracy_score = eval_metrics['accuracy_metric'](masks_pred_cpu, masks_cpu)
-                        average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
+                        iou_score = eval_metrics['IoU_score'](masks_pred, masks)
+                        recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                        precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                        accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
+                        average_precision = eval_metrics['average_precision'](masks_pred, masks)
                     else:
                         raise NotImplementedError("Method only available for multilabel segmentation.")
                     loss = loss_ce if combined_loss else loss_ce
@@ -178,15 +174,11 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                     loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                     loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
 
-                    # Use cpu
-                    masks_pred_cpu = masks_pred.cpu()
-                    masks_cpu = masks.cpu()
-
-                    iou_score = eval_metrics['IoU_score'](masks_pred_cpu, masks_cpu)
-                    recall_score = eval_metrics['recall_metric'](masks_pred_cpu, masks_cpu)
-                    precision_score = eval_metrics['precision_metric'](masks_pred_cpu, masks_cpu)
-                    accuracy_score = eval_metrics['accuracy_metric'](masks_pred_cpu, masks_cpu)
-                    average_precision = eval_metrics['average_precision'](masks_pred_cpu, masks_cpu)
+                    iou_score = eval_metrics['IoU_score'](masks_pred, masks)
+                    recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                    precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                    accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
+                    average_precision = eval_metrics['average_precision'](masks_pred, masks)
                 else:
                     raise NotImplementedError("Method only available for multilabel segmentation.")
                 loss = loss_ce if combined_loss else loss_ce
@@ -209,12 +201,12 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             print(f"Warning: Average precision contains NaN or Inf values at epoch {epoch}.")
             epoch_average_precision += 0
 
-        if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
-            if dataset == 'coco':
-                visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'], output_path,
-                                                                  data['img_path'], epoch, num_images=3)
-            else:
-                save_multiclass_image_output(imgs, masks_cpu, masks_pred_cpu, output_path, epoch, i, color_map=color_map)
+        # if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
+        #     if dataset == 'coco':
+        #         visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'], output_path,
+        #                                                           data['img_path'], epoch, num_images=3)
+        #     else:
+        #         save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map=color_map)
 
     avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
     avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)

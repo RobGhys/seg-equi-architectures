@@ -34,7 +34,7 @@ parser.add_argument('--location_lucia', default=False, help='Data are located on
 parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
 parser.add_argument('--subset_data', default=False, help='Uses a subset of the Dataset', action='store_true')
 parser.add_argument('--rob', default=False, help='Uses Rob local data', action='store_true')
-parser.add_argument('--freq-save-model', type=int, help='Frequency for weights and summary save points', default=5)
+parser.add_argument('--freq-save-model', type=int, help='Frequency for weights and summary save points', default=100)
 parser.add_argument(
     "--resume",
     default="",
@@ -110,11 +110,11 @@ eval_metrics: dict = {}
 if model.n_classes > 1:
     eval_metrics['loss_ce'] = nn.CrossEntropyLoss().to(device)
     eval_metrics['dice_criterion'] = DiceLossMulticlass().to(device)
-    eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes'])
-    eval_metrics['average_precision'] = AveragePrecision(task='multiclass', num_classes=settings['n_classes'])
-    eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes'])
-    eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes'])
-    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes'])
+    eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
+    eval_metrics['average_precision'] = AveragePrecision(task='multiclass', num_classes=settings['n_classes']).to(device)
+    eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
+    eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
+    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
 else:
     eval_metrics['loss_ce'] = nn.BCELoss(reduction='mean').to(device)
     eval_metrics['dice_criterion'] = DiceLoss().to(device)
@@ -219,8 +219,9 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss, color_map=color_map,
                                                 dataset=dataset_name, model_name=model_name, freq_save_model=freq_save_model)
+        print('clearing cuda cache')
         torch.cuda.empty_cache()
-
+        print('done clearing cuda cache')
         print(f'\nEpoch : {epoch + 1} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
               f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
