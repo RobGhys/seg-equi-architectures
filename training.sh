@@ -36,14 +36,14 @@ wandb_api_key=$1
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 python src/Benchmarks/training/main.py \
 kvasir \
-UNet_Vanilla \
+UNet_vanilla \
 $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
 --save_model \
 --use_amp \
---freq-save-model 20
+--freq-save-model 100
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
