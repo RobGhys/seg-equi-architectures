@@ -1,3 +1,4 @@
+import json
 import os
 import random
 from typing import List
@@ -188,3 +189,45 @@ def stop_weights_and_biases():
         print('...Closed W&B')
     except Exception as e:
         print(f"An error occurred while closing W&B: {e}")
+
+def save_summary_and_settings(summary, settings, output_path, epoch):
+    summary_path = os.path.join(output_path, 'summary.json')
+    settings_path = os.path.join(output_path, 'settings_used.json')
+
+    with open(summary_path, 'w') as jsonfile:
+        json.dump(summary, jsonfile, indent=4)
+
+    with open(settings_path, 'w') as jsonfile:
+        json.dump(settings, jsonfile, indent=4)
+
+    print(f"Saved summary and settings at epoch {epoch + 1}")
+
+def load_summary_and_settings(output_path, start_epoch):
+    summary_path = os.path.join(output_path, 'summary.json')
+    settings_path = os.path.join(output_path, 'settings_used.json')
+
+    summary = {
+        'train': {'loss_ce': [], 'loss_dice': [], 'IoU_score': [], 'recall_metric': [],
+                  'precision_metric': [], 'accuracy_metric': [], 'average_precision': [], 'time': []},
+        'test': {'loss_ce': [], 'loss_dice': [], 'IoU_score': [], 'recall_metric': [],
+                 'precision_metric': [], 'accuracy_metric': [], 'average_precision': [], 'time': []}
+    }
+    settings = {}
+
+    # Charger les fichiers JSON s'ils existent
+    if os.path.exists(summary_path):
+        with open(summary_path, 'r') as jsonfile:
+            summary = json.load(jsonfile)
+
+        # Synchroniser les entrées du résumé avec l'époque de reprise
+        for key in summary['train']:
+            if len(summary['train'][key]) > start_epoch:
+                summary['train'][key] = summary['train'][key][:start_epoch]
+            if len(summary['test'][key]) > start_epoch:
+                summary['test'][key] = summary['test'][key][:start_epoch]
+
+    if os.path.exists(settings_path):
+        with open(settings_path, 'r') as jsonfile:
+            settings = json.load(jsonfile)
+
+    return summary, settings

@@ -4,19 +4,18 @@ accordingly to the _settings.json file (specificities for each dataset)
 """
 
 import argparse
-import json
 from datetime import datetime
 
 from torch import optim
-from torchmetrics.classification import JaccardIndex, MulticlassF1Score, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy, AveragePrecision
-
+from torchmetrics.classification import JaccardIndex, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy, \
+    AveragePrecision
 from tqdm import tqdm
 
 from engine import run_epoch_binary_seg, run_epoch_multiclass_seg
 from load_data import *
 from load_model import *
 from scores import DiceLoss, DiceCoeff, IoUCoeff, Precision, Recall, Accuracy, DiceLossMulticlass
-from utils import model_sanity_check, launch_weights_and_biases
+from utils import model_sanity_check, launch_weights_and_biases, save_summary_and_settings, load_summary_and_settings
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -34,7 +33,8 @@ parser.add_argument('--new_model_name', type=str, help='Optional name of the fol
 parser.add_argument('--location_lucia', default=False, help='Data are located on lucia', action='store_true')
 parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
 parser.add_argument('--subset_data', default=False, help='Uses a subset of the Dataset', action='store_true')
-parser.add_argument('--mac', default=False, help='Uses MAC', action='store_true')
+parser.add_argument('--rob', default=False, help='Uses Rob local data', action='store_true')
+parser.add_argument('--freq-save-model', type=int, help='Frequency for weights and summary save points', default=5)
 parser.add_argument(
     "--resume",
     default="",
@@ -61,9 +61,10 @@ new_model_name = parser.parse_args().new_model_name
 data_location_lucia = parser.parse_args().location_lucia
 wandb_api_key = parser.parse_args().wandb_api_key
 subset_data = parser.parse_args().subset_data
-mac = parser.parse_args().mac
 resume = parser.parse_args().resume
 start_epoch = parser.parse_args().start_epoch
+rob = parser.parse_args().rob
+freq_save_model = parser.parse_args().freq_save_model
 
 if new_model_name:
     output_path = os.path.join(os.getcwd(), 'outputs', dataset_name, new_model_name, 'fold_' + str(fold))
@@ -75,6 +76,8 @@ os.makedirs(output_path, exist_ok=True)
 base_dir = os.path.dirname(os.path.abspath(__file__))
 if data_location_lucia:
     settings_json = os.path.join(base_dir, '_settings_data.json')
+elif rob:
+    settings_json = os.path.join(base_dir, '_settings_data_local_rob.json')
 else:
     settings_json = os.path.join(base_dir, '_settings_data_local.json')
 
@@ -82,13 +85,8 @@ else:
 with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
 
-if mac:
-    npz_file = os.path.join(os.path.dirname(settings['path']), 'patch_ratios_fixed.npz')
-else:
-    npz_file = None
-
 # Load the data
-train_loader, test_loader = get_data_loader(settings, fold, subset_data, mac=mac, npz_file=npz_file)
+train_loader, test_loader = get_data_loader(settings, fold, subset_data)
 
 # Load the model
 model, n_params = getModel(model_name, settings)
@@ -156,23 +154,28 @@ if resume:
         print("=> no checkpoint found at '{}'".format(resume))
 
 # Train the model
-summary = {
-    'n_params': n_params,
-    'train': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
-        'accuracy_metric': [], 'time': []
-    },
-    'test': {
-        'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
-        'accuracy_metric': [], 'time': []
+if resume:
+    summary, settings = load_summary_and_settings(output_path, start_epoch=start_epoch)
+
+else:
+    summary = {
+        'n_params': n_params,
+        'train': {
+            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
+            'accuracy_metric': [], 'time': []
+        },
+        'test': {
+            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
+            'accuracy_metric': [], 'time': []
+        }
     }
-}
+
+epoch = start_epoch
 
 for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
     combined_loss = False
 
     if model.n_classes == 1:
-
         train_results = run_epoch_binary_seg(model, train_loader, optimizer, device, settings,
                                              grad_scaler, use_amp, phase='train', writer=writer, log_wandb=log_wandb,
                                              epoch=epoch, save_images=save_images,
@@ -185,7 +188,7 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
                                             output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                             combined_loss=combined_loss)
 
-        print(f'\nEpoch : {epoch} | dice : {eval_results["dice_score"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} |'
+        print(f'\nEpoch : {epoch + 1 } | dice : {eval_results["dice_score"]:.2f} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
               f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
@@ -193,6 +196,9 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
             scheduler.step(train_results['loss_ce'] + train_results['loss_dice'])
         else:
             scheduler.step(train_results['loss_dice'])
+
+        if (epoch + 1) % freq_save_model == 0 or (epoch + 1) == settings['models']['num_epochs']:
+            save_summary_and_settings(summary, settings, output_path, epoch)
     else:
         if save_images and settings['multiclass_palette_path'] is not None:
             palette_path = settings['multiclass_palette_path']
@@ -206,16 +212,16 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
                                                  epoch=epoch, save_images=save_images,
                                                  output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                  combined_loss=combined_loss, color_map=color_map,
-                                                 dataset=dataset_name, model_name=model_name)
+                                                 dataset=dataset_name, model_name=model_name, freq_save_model=freq_save_model)
 
         eval_results = run_epoch_multiclass_seg(model, test_loader, optimizer, device, settings,
                                                 grad_scaler, use_amp, phase='test', writer=writer, log_wandb=log_wandb,
                                                 epoch=epoch, save_images=save_images,
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss, color_map=color_map,
-                                                dataset=dataset_name, model_name=model_name)
+                                                dataset=dataset_name, model_name=model_name, freq_save_model=freq_save_model)
 
-        print(f'\nEpoch : {epoch} | IoU : {eval_results["IoU_score"]:.2f} |'
+        print(f'\nEpoch : {epoch + 1} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
               f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
@@ -223,14 +229,13 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
             scheduler.step(train_results['loss_ce'] + train_results['loss_dice'])
         else:
             scheduler.step(train_results['loss_dice'])
+        if (epoch + 1) % freq_save_model == 0 or (epoch + 1) == settings['models']['num_epochs']:
+            save_summary_and_settings(summary, settings, output_path, epoch)
+
     if save_model:
         state_dict = model.state_dict()
         torch.save(state_dict, os.path.join(output_path, 'checkpoint_epoch_{}.pth'.format(epoch)))
 
-# Save the summary
-with open(os.path.join(output_path, 'summary.json'), 'w') as jsonfile:
-    json.dump(summary, jsonfile, indent=4)
+# save at the end
+save_summary_and_settings(summary, settings, output_path, epoch)
 
-# Save the settings
-with open(os.path.join(output_path, 'settings_used.json'), 'w') as jsonfile:
-    json.dump(settings, jsonfile, indent=4)

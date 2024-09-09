@@ -1,6 +1,8 @@
 import json
 import os
-from typing import List, Tuple
+import random
+from typing import List
+from typing import Union
 
 import cv2
 import numpy as np
@@ -11,11 +13,8 @@ from pycocotools.coco import COCO
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 from torchvision import transforms
 from torchvision.utils import make_grid, save_image
-from typing import Union
-import random
 
 from src.Benchmarks.training.CocoStuffDataset import CocoStuffDataset
-from src.Benchmarks.training.patch_dataset import PatchDataset
 
 
 class BasicDataset(Dataset):
@@ -134,8 +133,7 @@ class BasicDataset(Dataset):
 
 
 def get_data_loader(settings, fold,
-                    subset_data: bool = False, mac: bool = False,
-                    npz_file: str = '/home/rob/Documents/Github/seg-equi-architectures/src/Benchmarks/analysis/patch_ratios_fixed.npz'):
+                    subset_data: bool = False):
     path = settings['path']
 
     # Get the folds that will be used for training and testing, respectively
@@ -154,35 +152,6 @@ def get_data_loader(settings, fold,
         testing_data += [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
                          if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
 
-    if mac:
-        train_data = PatchDataset(dataset_path=path,
-                                  filenames=training_data,
-                                  crop_size=(224, 224),
-                                  stride=16,
-                                  threshold=0.5,
-                                  mask_type=settings['mask_type'],
-                                  transforms=settings['transforms'],
-                                  npz_file=npz_file,
-                                  )
-        test_data = PatchDataset(dataset_path=path,
-                                 filenames=testing_data,
-                                 train_mode=False,
-                                 mask_type=settings['mask_type'],
-                                 transforms=settings['transforms'],
-                                 )
-
-        train_loader = DataLoader(train_data,
-                                  batch_size=settings['batch_size'],
-                                  shuffle=settings['shuffle'],
-                                  num_workers=settings['num_workers'],
-                                  pin_memory=True)
-
-        test_loader = DataLoader(test_data,
-                                 batch_size=settings['batch_size'],
-                                 num_workers=settings['num_workers'],
-                                 pin_memory=True)
-
-        return train_loader, test_loader
 
     if settings['name'] != 'coco':
         # Create the datasets
@@ -420,121 +389,82 @@ def visualize_multiclass_batch_with_generated_palette(images: torch.Tensor, mask
 
 
 if __name__ == "__main__":
-    # Testing MAC
-    mac:bool = True
+    settings_kvasir = {
+        "name": "kvasir",
+        'path': "/home/rob/Documents/3_projects/bench/kvasir",
+        "annotation_file": None,
+        'multiclass_palette_path': None,
+        'mask_type': 'single_class',
+        'transforms': {
+            'Resize': (128, 128),
+            'RandomCrop': None,
+            'flip': False,
+            'rot': False,
+            'Normalize': ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        },
+        'batch_size': 4,
+        'shuffle': True,
+        'num_workers': 2
+    }
 
-    if mac:
-        settings_kvasir = {
-            "name": "kvasir",
-            'path': "/home/rob/Documents/3_projects/bench/kvasir",
-            "annotation_file": None,
-            'multiclass_palette_path': None,
-            'mask_type': 'single_class',
-            'transforms': {
-                'Resize': (448, 448),
-                'RandomCrop': None,
-                'flip': False,
-                'rot': False,
-                'Normalize': ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-            },
-            'batch_size': 4,
-            'shuffle': True,
-            'num_workers': 2
-        }
+    settings_isaid = {
+        'name': "isaid",
+        'path': "/home/rob/Documents/3_projects/bench/isaid",
+        'mask_type': 'multiclass_semantic',
+        "annotation_file": None,
+        'multiclass_palette_path': '/home/rob/Documents/3_projects/bench/isaid/isaid_mask_palette.json',
+        'transforms': {
+            'Resize': None,
+            'RandomCrop': None,
+            'flip': False,
+            'rot': False,
+            'Normalize': None
+        },
+        'batch_size': 3,
+        'shuffle': True,
+        'num_workers': 1
+    }
 
-        fold = 0
-        output_path = os.path.join(os.getcwd(), 'outputs')
-        epoch = 1
+    settings_coco = {
+        'name': "coco",
+        'path': "/home/rob/Documents/3_projects/bench/coco/output",
+        "annotation_file": "/home/rob/Documents/3_projects/bench/coco/output/tmp_data/stuff_annotations_trainval2017/annotations/stuff_train2017.json",
+        'mask_type': 'multiclass_semantic',
+        'multiclass_palette_path': None,
+        'transforms': {
+            'Resize': (256, 256),
+            'RandomCrop': None,
+            'flip': False,
+            'rot': False,
+            'Normalize': None
+        },
+        'batch_size': 3,
+        'shuffle': True,
+        'num_workers': 1
+    }
 
-        # dataset choice
-        settings = settings_kvasir
-        train_loader, test_loader = get_data_loader(settings,
-                                                    fold,
-                                                    subset_data=True,
-                                                    mac=True)
+    fold = 0
+    output_path = os.path.join(os.getcwd(), 'outputs')
+    epoch = 1
 
-        for data in train_loader:
-            visualize_batch(data['img'], data['mask'], output_path, epoch, num_images=3)
-            break
+    # dataset choice
+    settings = settings_coco
+    train_loader, test_loader = get_data_loader(settings, fold, subset_data=True,
+                                                annotation_file=settings['annotation_file'])
 
-    else:
-
-        settings_kvasir = {
-            "name": "kvasir",
-            'path': "/home/rob/Documents/3_projects/bench/kvasir",
-            "annotation_file": None,
-            'multiclass_palette_path': None,
-            'mask_type': 'single_class',
-            'transforms': {
-                'Resize': (128, 128),
-                'RandomCrop': None,
-                'flip': False,
-                'rot': False,
-                'Normalize': ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-            },
-            'batch_size': 4,
-            'shuffle': True,
-            'num_workers': 2
-        }
-
-        settings_isaid = {
-            'name': "isaid",
-            'path': "/home/rob/Documents/3_projects/bench/isaid",
-            'mask_type': 'multiclass_semantic',
-            "annotation_file": None,
-            'multiclass_palette_path': '/home/rob/Documents/3_projects/bench/isaid/isaid_mask_palette.json',
-            'transforms': {
-                'Resize': None,
-                'RandomCrop': None,
-                'flip': False,
-                'rot': False,
-                'Normalize': None
-            },
-            'batch_size': 3,
-            'shuffle': True,
-            'num_workers': 1
-        }
-
-        settings_coco = {
-            'name': "coco",
-            'path': "/home/rob/Documents/3_projects/bench/coco/output",
-            "annotation_file": "/home/rob/Documents/3_projects/bench/coco/output/tmp_data/stuff_annotations_trainval2017/annotations/stuff_train2017.json",
-            'mask_type': 'multiclass_semantic',
-            'multiclass_palette_path': None,
-            'transforms': {
-                'Resize': (256, 256),
-                'RandomCrop': None,
-                'flip': False,
-                'rot': False,
-                'Normalize': None
-            },
-            'batch_size': 3,
-            'shuffle': True,
-            'num_workers': 1
-        }
-
-        fold = 0
-        output_path = os.path.join(os.getcwd(), 'outputs')
-        epoch = 1
-
-        # dataset choice
-        settings = settings_coco
-        train_loader, test_loader = get_data_loader(settings, fold, subset_data=True,
-                                                    annotation_file=settings['annotation_file'])
-
-        for data in train_loader:
-            if settings['mask_type'] == 'multiclass_semantic':
-                if settings['name'] == 'coco':
-                    visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'],
-                                                                      output_path, data['img_path'],
-                                                                      epoch, num_images=3)
-                else:
-                    visualize_multiclass_batch(data['img'], data['mask'],
-                                               output_path, data['img_path'],
-                                               epoch, num_images=3,
-                                               palette_path=settings['multiclass_palette_path'])
-            elif settings['mask_type'] == 'single_class':
-                visualize_batch(data['img'], data['mask'], output_path, epoch, num_images=3)
+    for data in train_loader:
+        if settings['mask_type'] == 'multiclass_semantic':
+            if settings['name'] == 'coco':
+                visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'],
+                                                                  output_path, data['img_path'],
+                                                                  epoch, num_images=3)
             else:
-                raise NotImplementedError
-            break
+                visualize_multiclass_batch(data['img'], data['mask'],
+                                           output_path, data['img_path'],
+                                           epoch, num_images=3,
+                                           palette_path=settings['multiclass_palette_path'])
+        elif settings['mask_type'] == 'single_class':
+            visualize_batch(data['img'], data['mask'], output_path, epoch, num_images=3)
+        else:
+            raise NotImplementedError
+        break

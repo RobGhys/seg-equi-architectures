@@ -7,7 +7,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres="gpu:1"
 #SBATCH --cpus-per-task=8
-#SBATCH --mem-per-cpu=4096
+#SBATCH --mem-per-cpu=8192
 #SBATCH --partition=gpu
 #
 #SBATCH --mail-user=robin.ghyselinck@unamur.be
@@ -41,7 +41,8 @@ $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --save_images \
 --location_lucia \
---wandb_api_key $wandb_api_key
+--wandb_api_key $wandb_api_key \
+--save_model
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 

@@ -119,6 +119,7 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
     summary[phase]['accuracy_metric'].append(avg_epoch_accuracy)
     summary[phase]['time'].append(time() - start_time)
 
+
     return {
         'loss_ce': avg_epoch_loss_ce,
         'loss_dice': avg_epoch_loss_dice,
@@ -133,7 +134,7 @@ def run_epoch_binary_seg(model, data_loader, optimizer, device,
 def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, grad_scaler, use_amp,
                              phase='train', writer=None, log_wandb=False, epoch=0, save_images=False, output_path=None,
                              eval_metrics=None, summary=None, save_img_freq: int = 1, combined_loss=False,
-                             color_map=None, dataset: str = 'default', model_name: str = 'UNet_vanilla'):
+                             color_map=None, dataset: str = 'default', model_name: str = 'UNet_vanilla', freq_save_model: int = 2):
     if phase == 'train':
         model.train()
     else:
@@ -240,7 +241,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['time'].append(time() - start_time)
 
     # Save checkpoint
-    if (epoch + 1) % 100 == 0:
+    if (epoch + 1) % freq_save_model == 0 and phase == 'eval':
         checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(epoch + 1)
         save_checkpoint({
             'epoch': epoch + 1,
