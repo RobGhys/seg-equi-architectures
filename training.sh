@@ -41,7 +41,8 @@ $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
---save_model
+--save_model \
+--use_amp
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 

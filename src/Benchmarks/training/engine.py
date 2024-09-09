@@ -135,6 +135,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                              color_map=None, dataset: str = 'default', model_name: str = 'UNet_vanilla', freq_save_model: int = 2):
     if phase == 'train':
         model.train()
+        optimizer.zero_grad(set_to_none=True)
     else:
         model.eval()
 
@@ -148,6 +149,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     epoch_average_precision = 0.0
 
     start_time = time()
+
     for i, (data) in enumerate(data_loader):
         imgs, masks = data['img'].to(device, dtype=torch.float32), data['mask'].to(device, dtype=torch.long).squeeze(1)
 
@@ -183,7 +185,7 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                         accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
                         average_precision = eval_metrics['average_precision'](masks_pred, masks)
 
-                        torch.cuda.empty_cache()
+                        #torch.cuda.empty_cache()
 
                 else:
                     raise NotImplementedError("Method only available for multilabel segmentation.")
@@ -206,6 +208,13 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         else:
             print(f"Warning: Average precision contains NaN or Inf values at epoch {epoch}.")
             epoch_average_precision += 0
+
+        if 'average_precision' in eval_metrics:
+            metric = eval_metrics['average_precision']
+            if hasattr(metric, 'reset'):
+                metric.reset()
+
+        torch.cuda.empty_cache()
 
         # if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
         #     if dataset == 'coco':
@@ -268,6 +277,9 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             'optimizer': optimizer.state_dict(),
         }, is_best=False, filename=os.path.join(output_path, checkpoint_name))
         print(f"Model checkpoint saved at epoch {epoch + 1} to {checkpoint_name}.")
+
+    del eval_metrics
+    torch.cuda.empty_cache()
 
     return {
         'loss_ce': avg_epoch_loss_ce,
