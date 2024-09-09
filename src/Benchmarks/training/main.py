@@ -110,12 +110,11 @@ eval_metrics: dict = {}
 if model.n_classes > 1:
     eval_metrics['loss_ce'] = nn.CrossEntropyLoss().to(device)
     eval_metrics['dice_criterion'] = DiceLossMulticlass().to(device)
-    eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
-    eval_metrics['average_precision'] = AveragePrecision(task='multiclass', num_classes=settings['n_classes']).to(device)
-    #eval_metrics['f1_score'] = MulticlassF1Score(num_classes=settings['n_classes']).to(device)
-    eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
-    eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
-    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
+    eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes'])
+    eval_metrics['average_precision'] = AveragePrecision(task='multiclass', num_classes=settings['n_classes'])
+    eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes'])
+    eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes'])
+    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes'])
 else:
     eval_metrics['loss_ce'] = nn.BCELoss(reduction='mean').to(device)
     eval_metrics['dice_criterion'] = DiceLoss().to(device)
@@ -161,12 +160,12 @@ else:
     summary = {
         'n_params': n_params,
         'train': {
-            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
-            'accuracy_metric': [], 'time': []
+            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'average_precision' : [],
+            'precision_metric': [], 'recall_metric': [], 'accuracy_metric': [], 'time': []
         },
         'test': {
-            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'precision_metric': [], 'recall_metric': [],
-            'accuracy_metric': [], 'time': []
+            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'average_precision': [], 'IoU_score': [],
+            'precision_metric': [], 'recall_metric': [], 'accuracy_metric': [], 'time': []
         }
     }
 
@@ -220,6 +219,7 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss, color_map=color_map,
                                                 dataset=dataset_name, model_name=model_name, freq_save_model=freq_save_model)
+        torch.cuda.empty_cache()
 
         print(f'\nEpoch : {epoch + 1} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'

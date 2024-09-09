@@ -22,7 +22,7 @@
             "lr": 0.0001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 6,
+                "lbda": 1.25,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -31,7 +31,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 10,
+                "lbda": 2.2,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -45,9 +45,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 31,
+                "lbda": 4.65,
                 "bilinear": true,
-                "gspace": "C8",
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -80,7 +80,7 @@
             "lr": 0.0001,
             "num_epochs": 150,
             "UNet_vanilla": {
-                "lbda": 6,
+                "lbda": 1.25,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -89,7 +89,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 10,
+                "lbda": 2.2,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -103,9 +103,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 31,
+                "lbda": 4.65,
                 "bilinear": true,
-                "gspace": "C8",
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -138,7 +138,7 @@
             "lr": 0.0005,
             "num_epochs": 500,
             "UNet_vanilla": {
-                "lbda": 6,
+                "lbda": 1.25,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -147,7 +147,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 10,
+                "lbda": 2.2,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -161,9 +161,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 31,
+                "lbda": 4.65,
                 "bilinear": true,
-                "gspace": "C8",
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
