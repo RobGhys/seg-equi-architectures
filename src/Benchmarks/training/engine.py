@@ -174,11 +174,17 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                     loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
                     loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
 
-                    iou_score = eval_metrics['IoU_score'](masks_pred, masks)
-                    recall_score = eval_metrics['recall_metric'](masks_pred, masks)
-                    precision_score = eval_metrics['precision_metric'](masks_pred, masks)
-                    accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
-                    average_precision = eval_metrics['average_precision'](masks_pred, masks)
+                    # save memory
+                    with torch.no_grad():
+                        masks_pred = masks_pred.detach()
+                        iou_score = eval_metrics['IoU_score'](masks_pred, masks)
+                        recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                        precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                        accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
+                        average_precision = eval_metrics['average_precision'](masks_pred, masks)
+
+                        torch.cuda.empty_cache()
+
                 else:
                     raise NotImplementedError("Method only available for multilabel segmentation.")
                 loss = loss_ce if combined_loss else loss_ce

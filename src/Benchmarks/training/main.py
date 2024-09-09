@@ -219,9 +219,6 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss, color_map=color_map,
                                                 dataset=dataset_name, model_name=model_name, freq_save_model=freq_save_model)
-        print('clearing cuda cache')
-        torch.cuda.empty_cache()
-        print('done clearing cuda cache')
         print(f'\nEpoch : {epoch + 1} | IoU : {eval_results["IoU_score"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
               f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
@@ -233,7 +230,7 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
         if (epoch + 1) % freq_save_model == 0 or (epoch + 1) == settings['models']['num_epochs']:
             save_summary_and_settings(summary, settings, output_path, epoch)
 
-    if save_model:
+    if save_model and (epoch + 1) % freq_save_model == 0:
         state_dict = model.state_dict()
         torch.save(state_dict, os.path.join(output_path, 'checkpoint_epoch_{}.pth'.format(epoch)))
 
