@@ -7,8 +7,7 @@ import argparse
 from datetime import datetime
 
 from torch import optim
-from torchmetrics.classification import JaccardIndex, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy, \
-    MulticlassAccuracy
+from torchmetrics.classification import JaccardIndex, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy
 from tqdm import tqdm
 
 from engine import run_epoch_binary_seg, run_epoch_multiclass_seg
@@ -115,7 +114,6 @@ if model.n_classes > 1:
     eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
     # multi-class acc --> pixel accuracy (pAcc)
     eval_metrics['pacc'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
-    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes'], average='macro').to(device)
     eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes'], average='macro').to(device)
     eval_metrics['fw_iou'] = None
 else:

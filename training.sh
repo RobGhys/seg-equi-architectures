@@ -42,7 +42,8 @@ $SLURM_ARRAY_TASK_ID \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
 --save_model \
---use_amp
+--use_amp \
+--freq-save-model 20
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
