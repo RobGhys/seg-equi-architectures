@@ -8,7 +8,7 @@ from datetime import datetime
 
 from torch import optim
 from torchmetrics.classification import JaccardIndex, MulticlassPrecision, MulticlassRecall, MulticlassAccuracy, \
-    AveragePrecision
+    MulticlassAccuracy
 from tqdm import tqdm
 
 from engine import run_epoch_binary_seg, run_epoch_multiclass_seg
@@ -34,7 +34,7 @@ parser.add_argument('--location_lucia', default=False, help='Data are located on
 parser.add_argument('--wandb_api_key', type=str, help='Personal API key for weight and biases logs')
 parser.add_argument('--subset_data', default=False, help='Uses a subset of the Dataset', action='store_true')
 parser.add_argument('--rob', default=False, help='Uses Rob local data', action='store_true')
-parser.add_argument('--freq-save-model', type=int, help='Frequency for weights and summary save points', default=100)
+parser.add_argument('--freq-save-model', type=int, help='Frequency for weights and summary save points', default=1)
 parser.add_argument(
     "--resume",
     default="",
@@ -111,10 +111,13 @@ if model.n_classes > 1:
     eval_metrics['loss_ce'] = nn.CrossEntropyLoss().to(device)
     eval_metrics['dice_criterion'] = DiceLossMulticlass().to(device)
     eval_metrics['IoU_score'] = JaccardIndex(task='multiclass', num_classes=settings['n_classes']).to(device)
-    eval_metrics['average_precision'] = AveragePrecision(task='multiclass', num_classes=settings['n_classes']).to(device)
     eval_metrics['recall_metric'] = MulticlassRecall(num_classes=settings['n_classes']).to(device)
     eval_metrics['precision_metric'] = MulticlassPrecision(num_classes=settings['n_classes']).to(device)
-    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
+    # multi-class acc --> pixel accuracy (pAcc)
+    eval_metrics['pacc'] = MulticlassAccuracy(num_classes=settings['n_classes']).to(device)
+    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes'], average='macro').to(device)
+    eval_metrics['accuracy_metric'] = MulticlassAccuracy(num_classes=settings['n_classes'], average='macro').to(device)
+    eval_metrics['fw_iou'] = None
 else:
     eval_metrics['loss_ce'] = nn.BCELoss(reduction='mean').to(device)
     eval_metrics['dice_criterion'] = DiceLoss().to(device)
@@ -160,11 +163,11 @@ else:
     summary = {
         'n_params': n_params,
         'train': {
-            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'average_precision' : [],
+            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'IoU_score': [], 'pacc' : [], 'fw_iou': [],
             'precision_metric': [], 'recall_metric': [], 'accuracy_metric': [], 'time': []
         },
         'test': {
-            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'average_precision': [], 'IoU_score': [],
+            'loss_ce': [], 'loss_dice': [], 'dice_score': [], 'pacc': [], 'IoU_score': [], 'fw_iou': [],
             'precision_metric': [], 'recall_metric': [], 'accuracy_metric': [], 'time': []
         }
     }
@@ -197,6 +200,7 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
             scheduler.step(train_results['loss_dice'])
 
         if (epoch + 1) % freq_save_model == 0 or (epoch + 1) == settings['models']['num_epochs']:
+
             save_summary_and_settings(summary, settings, output_path, epoch)
     else:
         if save_images and settings['multiclass_palette_path'] is not None:
@@ -219,7 +223,7 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
                                                 output_path=output_path, eval_metrics=eval_metrics, summary=summary,
                                                 combined_loss=combined_loss, color_map=color_map,
                                                 dataset=dataset_name, model_name=model_name, freq_save_model=freq_save_model)
-        print(f'\nEpoch : {epoch + 1} | IoU : {eval_results["IoU_score"]:.2f} |'
+        print(f'\nEpoch : {epoch + 1} | IoU : {eval_results["IoU_score"]:.2f} | pAcc : {eval_results["pacc"]:.2f} | fwIoU : {eval_results["fw_iou"]:.2f} |'
               f'Accuracy : {eval_results["accuracy_metric"]:.2f} | Precision : {eval_results["precision_metric"]:.2f}'
               f'| Recall : {eval_results["recall_metric"]:.2f} | LR : {optimizer.param_groups[0]["lr"]:.5f}')
 
@@ -228,6 +232,13 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
         else:
             scheduler.step(train_results['loss_dice'])
         if (epoch + 1) % freq_save_model == 0 or (epoch + 1) == settings['models']['num_epochs']:
+            for key, value in summary.items():
+                print('summary???')
+                print(summary)
+                print('next...')
+                if isinstance(value, torch.Tensor):
+                    print(f"Tensor found in summary under key: {key}, shape: {value.shape}")
+
             save_summary_and_settings(summary, settings, output_path, epoch)
 
     if save_model and (epoch + 1) % freq_save_model == 0:

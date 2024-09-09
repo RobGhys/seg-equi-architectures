@@ -146,7 +146,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     epoch_recall = 0.0
     epoch_precision = 0.0
     epoch_accuracy = 0.0
-    epoch_average_precision = 0.0
+    epoch_pacc = 0.0
+    epoch_fw_iou = 0.0
 
     start_time = time()
 
@@ -157,17 +158,21 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             with torch.no_grad():
                 with torch.autocast(device.type, enabled=use_amp):
                     masks_pred = model(imgs)
-                    if settings['n_classes'] > 1:
-                        loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
-                        loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
 
-                        iou_score = eval_metrics['IoU_score'](masks_pred, masks)
-                        recall_score = eval_metrics['recall_metric'](masks_pred, masks)
-                        precision_score = eval_metrics['precision_metric'](masks_pred, masks)
-                        accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
-                        average_precision = eval_metrics['average_precision'](masks_pred, masks)
-                    else:
-                        raise NotImplementedError("Method only available for multilabel segmentation.")
+                    loss_ce = eval_metrics['loss_ce'](masks_pred, masks)
+                    loss_dice = eval_metrics['dice_criterion'](masks_pred, masks)
+
+                    iou_score = eval_metrics['IoU_score'](masks_pred, masks)
+                    recall_score = eval_metrics['recall_metric'](masks_pred, masks)
+                    precision_score = eval_metrics['precision_metric'](masks_pred, masks)
+                    accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
+
+                    pacc = eval_metrics['pacc'](masks_pred, masks).item()  # Convert to float
+
+                    class_counts = torch.bincount(masks.flatten(), minlength=settings['n_classes'])
+                    total_pixels = masks.numel()
+                    fw_iou = torch.sum((class_counts / total_pixels) * iou_score).item()  # Convert to float
+
                     loss = loss_ce if combined_loss else loss_ce
         else:
             with torch.autocast(device.type, enabled=use_amp):
@@ -183,9 +188,11 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
                         recall_score = eval_metrics['recall_metric'](masks_pred, masks)
                         precision_score = eval_metrics['precision_metric'](masks_pred, masks)
                         accuracy_score = eval_metrics['accuracy_metric'](masks_pred, masks)
-                        average_precision = eval_metrics['average_precision'](masks_pred, masks)
+                        pacc = eval_metrics['pacc'](masks_pred, masks).item()  # Convert to float
 
-                        #torch.cuda.empty_cache()
+                        class_counts = torch.bincount(masks.flatten(), minlength=settings['n_classes'])
+                        total_pixels = masks.numel()
+                        fw_iou = torch.sum((class_counts / total_pixels) * iou_score).item()  # Convert to float
 
                 else:
                     raise NotImplementedError("Method only available for multilabel segmentation.")
@@ -197,31 +204,27 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             grad_scaler.step(optimizer)
             grad_scaler.update()
 
+        if isinstance(pacc, list) and isinstance(pacc[0], torch.Tensor):
+            pacc = [p.item() for p in pacc]  # Convert tensor to float
+
+        if isinstance(fw_iou, list) and isinstance(fw_iou[0], torch.Tensor):
+            fw_iou = [f.item() for f in fw_iou]  # Convert tensor to float
+
         epoch_loss_ce += loss_ce.item()
         epoch_loss_dice += loss_dice.item()
         epoch_iou_score += iou_score.item()
         epoch_recall += recall_score.item()
         epoch_precision += precision_score.item()
         epoch_accuracy += accuracy_score.item()
-        if not torch.isnan(average_precision).any() and not torch.isinf(average_precision).any():
-            epoch_average_precision += average_precision.item()
-        else:
-            print(f"Warning: Average precision contains NaN or Inf values at epoch {epoch}.")
-            epoch_average_precision += 0
+        epoch_pacc += pacc
+        epoch_fw_iou += fw_iou
 
-        if 'average_precision' in eval_metrics:
-            metric = eval_metrics['average_precision']
-            if hasattr(metric, 'reset'):
-                metric.reset()
-
-        torch.cuda.empty_cache()
-
-        # if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
-        #     if dataset == 'coco':
-        #         visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'], output_path,
-        #                                                           data['img_path'], epoch, num_images=3)
-        #     else:
-        #         save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map=color_map)
+        if phase == 'test' and i == 0 and (epoch + 1) % save_img_freq == 0 and save_images:
+            if dataset == 'coco':
+                visualize_multiclass_batch_with_generated_palette(data['img'], data['mask'], output_path,
+                                                                  data['img_path'], epoch, num_images=3)
+            else:
+                save_multiclass_image_output(imgs, masks, masks_pred, output_path, epoch, i, color_map=color_map)
 
     avg_epoch_loss_ce = epoch_loss_ce / len(data_loader)
     avg_epoch_loss_dice = epoch_loss_dice / len(data_loader)
@@ -229,7 +232,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     avg_epoch_recall = epoch_recall / len(data_loader)
     avg_epoch_precision = epoch_precision / len(data_loader)
     avg_epoch_accuracy = epoch_accuracy / len(data_loader)
-    avg_epoch_average_precision = epoch_average_precision / len(data_loader)
+    avg_epoch_pacc = pacc / len(data_loader)
+    avg_epoch_fw_iou = fw_iou / len(data_loader)
 
     if log_wandb:
         log_data = {
@@ -239,7 +243,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
             f"Recall/{phase}": avg_epoch_recall,
             f"Precision/{phase}": avg_epoch_precision,
             f"Accuracy/{phase}": avg_epoch_accuracy,
-            f"Average_Precision/{phase}": avg_epoch_average_precision
+            f"pAcc/{phase}": avg_epoch_pacc,
+            f"fw IoU/{phase}": avg_epoch_fw_iou
         }
         if phase == 'train':
             log_data["Learning Rate"] = optimizer.param_groups[0]['lr']
@@ -252,7 +257,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         writer.add_scalar(f'Recall/{phase}', avg_epoch_recall, epoch)
         writer.add_scalar(f'Precision/{phase}', avg_epoch_precision, epoch)
         writer.add_scalar(f'Accuracy/{phase}', avg_epoch_accuracy, epoch)
-        writer.add_scalar(f'Average_Precision/{phase}', avg_epoch_average_precision, epoch)
+        writer.add_scalar(f'pAcc/{phase}', avg_epoch_pacc, epoch)
+        writer.add_scalar(f'fw IoU/{phase}', avg_epoch_fw_iou, epoch)
 
         if phase == 'train':
             writer.add_scalar('Learning rate', optimizer.param_groups[0]['lr'], epoch)
@@ -264,7 +270,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
     summary[phase]['recall_metric'].append(avg_epoch_recall)
     summary[phase]['precision_metric'].append(avg_epoch_precision)
     summary[phase]['accuracy_metric'].append(avg_epoch_accuracy)
-    summary[phase]['average_precision'].append(avg_epoch_average_precision)
+    summary[phase]['pacc'].append(avg_epoch_pacc)
+    summary[phase]['fw_iou'].append(avg_epoch_fw_iou)
     summary[phase]['time'].append(time() - start_time)
 
     # Save checkpoint
@@ -278,9 +285,6 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         }, is_best=False, filename=os.path.join(output_path, checkpoint_name))
         print(f"Model checkpoint saved at epoch {epoch + 1} to {checkpoint_name}.")
 
-    del eval_metrics
-    torch.cuda.empty_cache()
-
     return {
         'loss_ce': avg_epoch_loss_ce,
         'loss_dice': avg_epoch_loss_dice,
@@ -288,7 +292,8 @@ def run_epoch_multiclass_seg(model, data_loader, optimizer, device, settings, gr
         'recall_metric': avg_epoch_recall,
         'precision_metric': avg_epoch_precision,
         'accuracy_metric': avg_epoch_accuracy,
-        'average_precision': avg_epoch_average_precision,
+        'pacc': avg_epoch_pacc,
+        'fw_iou': avg_epoch_fw_iou,
         'time': time() - start_time
     }
 
@@ -296,3 +301,14 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
         shutil.copyfile(filename, 'model_best.pth.tar')
+
+def convert_tensors_to_floats(summary):
+    """
+    Convert all tensors in the summary dictionary to floats for JSON serialization.
+    """
+    for phase in summary:
+        for key, values in summary[phase].items():
+            if isinstance(values, list) and len(values) > 0 and isinstance(values[0], torch.Tensor):
+                # Convert list of tensors to list of floats
+                summary[phase][key] = [v.item() for v in values]
+    return summary
