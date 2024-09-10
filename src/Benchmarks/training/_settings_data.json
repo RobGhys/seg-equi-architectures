@@ -80,7 +80,7 @@
             "lr": 0.0001,
             "num_epochs": 150,
             "UNet_vanilla": {
-                "lbda": 1.25,
+                "lbda": 6,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -89,7 +89,7 @@
                 }
             },
             "UNet_bcnn": {
-                "lbda": 2.2,
+                "lbda": 10,
                 "bilinear": true,
                 "reflex_inv": false,
                 "scale_inv": false,
@@ -103,7 +103,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4.65,
+                "lbda": 23,
                 "bilinear": true,
                 "gspace": "C4",
                 "acti": "relu",

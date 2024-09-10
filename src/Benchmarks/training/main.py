@@ -230,13 +230,6 @@ for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
         else:
             scheduler.step(train_results['loss_dice'])
         if (epoch + 1) % freq_save_model == 0 or (epoch + 1) == settings['models']['num_epochs']:
-            for key, value in summary.items():
-                print('summary???')
-                print(summary)
-                print('next...')
-                if isinstance(value, torch.Tensor):
-                    print(f"Tensor found in summary under key: {key}, shape: {value.shape}")
-
             save_summary_and_settings(summary, settings, output_path, epoch)
 
     if save_model and (epoch + 1) % freq_save_model == 0:
