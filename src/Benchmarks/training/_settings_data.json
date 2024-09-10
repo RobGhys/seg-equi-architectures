@@ -45,9 +45,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4.65,
+                "lbda": 31,
                 "bilinear": true,
-                "gspace": "C4",
+                "gspace": "D4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
