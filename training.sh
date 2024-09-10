@@ -7,7 +7,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres="gpu:1"
 #SBATCH --cpus-per-task=8
-#SBATCH --mem-per-cpu=8192
+#SBATCH --mem-per-cpu=7650
 #SBATCH --partition=gpu
 #
 #SBATCH --mail-user=robin.ghyselinck@unamur.be
@@ -35,7 +35,7 @@ wandb_api_key=$1
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 python src/Benchmarks/training/main.py \
-NucleiSeg \
+kvasir \
 UNet_e2cnn \
 $SLURM_ARRAY_TASK_ID \
 --save_logs \
