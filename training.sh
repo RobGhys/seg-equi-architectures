@@ -35,8 +35,8 @@ wandb_api_key=$1
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 python src/Benchmarks/training/main.py \
-kvasir \
-UNet_vanilla \
+NucleiSeg \
+UNet_e2cnn \
 $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --location_lucia \
