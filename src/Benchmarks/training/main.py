@@ -139,7 +139,6 @@ if resume:
     if os.path.isfile(resume):
         print("=> loading checkpoint '{}'".format(resume))
         checkpoint = torch.load(resume, map_location=device, weights_only=True)
-        start_epoch = checkpoint["epoch"]
         model.load_state_dict(checkpoint["state_dict"])
         model.to(device=device)
         optimizer.load_state_dict(checkpoint["optimizer"])

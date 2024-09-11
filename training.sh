@@ -34,16 +34,29 @@ fi
 wandb_api_key=$1
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
+
+resume_path="/gpfs/projects/acad/bcnn/seg-equi-architectures/outputs/coco/UNet_e2cnn/fold_${SLURM_ARRAY_TASK_ID}/checkpoint_epoch_159.pth"
+
+# Check if the resume file exists
+if [ ! -f "$resume_path" ]; then
+    echo "Error: Resume file not found at $resume_path"
+    exit 1
+fi
+
 python src/Benchmarks/training/main.py \
-kvasir \
+coco \
 UNet_e2cnn \
 $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
 --save_model \
---freq-save-model 100
+--freq-save-model 100 \
+--resume "$resume_path" \
+--start-epoch 160 \
+--use_amp
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
 echo "Exiting the program."
+
