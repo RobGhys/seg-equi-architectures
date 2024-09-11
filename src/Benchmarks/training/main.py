@@ -137,18 +137,27 @@ else:
 
 if resume:
     if os.path.isfile(resume):
-        print("=> loading checkpoint '{}'".format(resume))
+        print(f"=> loading checkpoint '{resume}'")
+        # Load the checkpoint as a state dictionary
         checkpoint = torch.load(resume, map_location=device)
+
+        # Load the model state directly since the checkpoint is saved without a key
         model.load_state_dict(checkpoint)
-
         model.to(device=device)
-        optimizer.load_state_dict(checkpoint["optimizer"])
-        print(f"=> loaded checkpoint '{resume}' (epoch {start_epoch})")
 
+        # Reinitialize the optimizer since the state is not present in the checkpoint
+        optimizer = optim.AdamW(model.parameters(), lr=settings['models']['lr'])
+
+        # Check if the checkpoint contains the optimizer state, and load it if available
+        if 'optimizer' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+        else:
+            print("=> No optimizer state found in the checkpoint; reinitializing optimizer.")
+
+        print(f"=> loaded checkpoint '{resume}' (epoch {start_epoch})")
         print(f"Model device after loading checkpoint: {next(model.parameters()).device}")
-        print(f"Optimizer device after loading checkpoint: {device}")
     else:
-        print("=> no checkpoint found at '{}'".format(resume))
+        print(f"=> no checkpoint found at '{resume}'")
 
 # Train the model
 if resume:
