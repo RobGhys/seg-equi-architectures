@@ -138,15 +138,13 @@ else:
 if resume:
     if os.path.isfile(resume):
         print("=> loading checkpoint '{}'".format(resume))
-        checkpoint = torch.load(resume, map_location=device, weights_only=True)
-        model.load_state_dict(checkpoint["state_dict"])
+        checkpoint = torch.load(resume, map_location=device)
+        model.load_state_dict(checkpoint)
+
         model.to(device=device)
         optimizer.load_state_dict(checkpoint["optimizer"])
-        print(
-            "=> loaded checkpoint '{}' (epoch {})".format(
-                resume, checkpoint["epoch"]
-            )
-        )
+        print(f"=> loaded checkpoint '{resume}' (epoch {start_epoch})")
+
         print(f"Model device after loading checkpoint: {next(model.parameters()).device}")
         print(f"Optimizer device after loading checkpoint: {device}")
     else:
