@@ -196,7 +196,7 @@
             "lr": 0.0001,
             "num_epochs": 250,
             "UNet_vanilla": {
-                "lbda": 6,
+                "lbda": 1.25,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -219,9 +219,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 31,
+                "lbda": 4.65,
                 "bilinear": true,
-                "gspace": "C8",
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -254,7 +254,7 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 6,
+                "lbda": 1.25,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -277,9 +277,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 31,
+                "lbda": 4.65,
                 "bilinear": true,
-                "gspace": "C8",
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
