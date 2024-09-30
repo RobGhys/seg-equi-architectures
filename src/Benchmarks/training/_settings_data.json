@@ -177,7 +177,7 @@
         "name": "isaid",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/isaid",
         "annotation_file" : null,
-        "multiclass_palette_path" : "/gpfs/projects/acad/bcnn/datasets_bench/isaid/isaid_mask_palette.json",
+        "multiclass_palette_path" : "/gpfs/scratch/acad/lysmed/datasets_bench/isaid/isaid_mask_palette.json",
         "in_channels": 3,
         "n_classes": 16,
         "mask_type": "multiclass_semantic",
@@ -233,7 +233,7 @@
     },
     "coco": {
         "name": "coco",
-        "annotation_file" : "/gpfs/projects/acad/bcnn/datasets_bench/coco/stuff_train2017.json",
+        "annotation_file" : "/gpfs/scratch/acad/lysmed/datasets_bench/coco/stuff_train2017.json",
         "path": "/gpfs/projects/acad/bcnn/datasets_bench/coco",
         "multiclass_palette_path" : null,
         "in_channels": 3,

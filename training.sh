@@ -13,7 +13,7 @@
 #SBATCH --mail-user=robin.ghyselinck@unamur.be
 #SBATCH --mail-type=ALL
 #
-#SBATCH --account=bcnn
+#SBATCH --account=lysmed
 
 
 # ------------------------- work -------------------------
@@ -21,7 +21,7 @@
 export OMP_NUM_THREADS=8
 export MKL_NUM_THREADS=8
 
-export PYTHONPATH=$PYTHONPATH:/gpfs/projects/acad/bcnn/seg-equi-architectures/src/U-Net
+export PYTHONPATH=$PYTHONPATH:/gpfs/scratch/acad/lysmed/seg-equi-architectures/src/U-Net
 
 # Check if wandb_api_key is provided as a command line argument
 if [ "$#" -ne 1 ]; then
@@ -35,7 +35,7 @@ wandb_api_key=$1
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 
-resume_path="/gpfs/projects/acad/bcnn/seg-equi-architectures/outputs/coco/UNet_e2cnn/fold_${SLURM_ARRAY_TASK_ID}/checkpoint_epoch_159.pth"
+#resume_path="/gpfs/scratch/acad/lysmed/seg-equi-architectures/outputs/coco/UNet_e2cnn/fold_${SLURM_ARRAY_TASK_ID}/checkpoint_epoch_159.pth"
 
 # Check if the resume file exists
 if [ ! -f "$resume_path" ]; then
@@ -44,17 +44,17 @@ if [ ! -f "$resume_path" ]; then
 fi
 
 python src/Benchmarks/training/main.py \
-kvasir \
-UNet_e2cnn \
+coco \
+UNet_vanilla \
 $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
 --save_model \
---freq-save-model 100 #\
+--freq-save-model 20 \
+--use_amp
 #--resume "$resume_path" \
 #--start-epoch 160 \
-#--use_amp
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
