@@ -219,7 +219,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4.65,
+                "lbda": 23,
                 "bilinear": true,
                 "gspace": "C4",
                 "acti": "relu",
