@@ -27,7 +27,7 @@ class CocoStuffDataset(Dataset):
         if isinstance(self.transforms['Resize'], list):
             self.transforms['Resize'] = tuple(self.transforms['Resize'])
 
-        print(f'CocoStuffDataset transforms: {self.transforms}')
+        #print(f'CocoStuffDataset transforms: {self.transforms}')
 
     def decode_rle(self, rle, height, width):
         mask = maskUtils.decode(rle)

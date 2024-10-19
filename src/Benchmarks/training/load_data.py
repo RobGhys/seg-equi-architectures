@@ -42,7 +42,7 @@ class BasicDataset(Dataset):
                 self.multiclass_palette = json.load(f)
             self.palette = {tuple(v): int(k) for k, v in self.multiclass_palette.items()}
 
-        print(f'BasicDataset transforms : {self.transforms}')
+        #print(f'BasicDataset transforms : {self.transforms}')
 
     def convert_rgb_to_class_indices(self, mask, debug=False) -> torch.Tensor:
         # Convert RGB mask to class indices
