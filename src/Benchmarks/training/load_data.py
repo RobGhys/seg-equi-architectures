@@ -133,7 +133,8 @@ class BasicDataset(Dataset):
 
 
 def get_data_loader(settings, fold,
-                    subset_data: bool = False):
+                    subset_data: bool = False, seed: int = 42,
+                    percent_subset: float = 0.1):
     path = settings['path']
 
     # Get the folds that will be used for training and testing, respectively
@@ -142,16 +143,7 @@ def get_data_loader(settings, fold,
     training_folds = folds
 
     # Get the filenames of the images in the training and testing folds
-    training_data = []
-    for fold in training_folds:
-        training_data += [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
-                          if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
-
-    testing_data = []
-    for fold in testing_folds:
-        testing_data += [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
-                         if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
-
+    testing_data, training_data = get_train_test_data(path, testing_folds, training_folds, seed, percent_subset)
 
     if settings['name'] != 'coco':
         # Create the datasets
@@ -252,6 +244,27 @@ def get_data_loader(settings, fold,
                                      pin_memory=True)
 
     return train_loader, test_loader
+
+
+def get_train_test_data(path, testing_folds, training_folds,
+                        seed, percent_subset):
+    training_data = []
+    for fold in training_folds:
+        fold_data = [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
+                       if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
+        if percent_subset is not None:
+            random.seed(seed)
+            sample_size = max(1, int(percent_subset * len(fold_data)))
+            fold_sample = random.sample(fold_data, sample_size)
+            training_data.extend(fold_sample)
+
+    testing_data = []
+    for fold in testing_folds:
+        testing_data += [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
+                         if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
+
+
+    return testing_data, training_data
 
 
 def denormalize(tensor, mean, std):
@@ -450,7 +463,8 @@ if __name__ == "__main__":
     # dataset choice
     settings = settings_coco
     train_loader, test_loader = get_data_loader(settings, fold, subset_data=True,
-                                                annotation_file=settings['annotation_file'])
+                                                annotation_file=settings['annotation_file'],
+                                                seed=42, percent_subset=0.1)
 
     for data in train_loader:
         if settings['mask_type'] == 'multiclass_semantic':

@@ -254,7 +254,7 @@
             "lr": 0.001,
             "num_epochs": 200,
             "UNet_vanilla": {
-                "lbda": 1.25,
+                "lbda": 6,
                 "bilinear": true,
                 "kernel_size": 3,
                 "acti": "relu",
@@ -277,9 +277,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 4.65,
+                "lbda": 23,
                 "bilinear": true,
-                "gspace": "D4",
+                "gspace": "C4",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true

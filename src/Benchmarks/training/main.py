@@ -85,7 +85,7 @@ with open(settings_json, 'r') as jsonfile:
     settings = json.load(jsonfile)[dataset_name]
 
 # Load the data
-train_loader, test_loader = get_data_loader(settings, fold, subset_data)
+train_loader, test_loader = get_data_loader(settings, fold, subset_data, seed=42, percent_subset= 0.1)
 
 # Load the model
 model, n_params = getModel(model_name, settings)
