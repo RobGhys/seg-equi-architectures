@@ -44,15 +44,15 @@ if [ ! -f "$resume_path" ]; then
 fi
 
 python src/Benchmarks/training/main.py \
-coco \
-UNet_vanilla \
+kvasir \
+UNet_e2cnn \
 $SLURM_ARRAY_TASK_ID \
 --save_logs \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
 --save_model \
---freq-save-model 20 \
---use_amp
+--freq-save-model 50 \
+#--use_amp
 #--resume "$resume_path" \
 #--start-epoch 160 \
 
