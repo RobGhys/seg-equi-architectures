@@ -38,10 +38,10 @@ echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 #resume_path="/gpfs/scratch/acad/lysmed/seg-equi-architectures/outputs/coco/UNet_e2cnn/fold_${SLURM_ARRAY_TASK_ID}/checkpoint_epoch_159.pth"
 
 # Check if the resume file exists
-if [ ! -f "$resume_path" ]; then
-    echo "Error: Resume file not found at $resume_path"
-    exit 1
-fi
+#if [ ! -f "$resume_path" ]; then
+#    echo "Error: Resume file not found at $resume_path"
+#    exit 1
+#fi
 
 python src/Benchmarks/training/main.py \
 kvasir \
@@ -51,7 +51,7 @@ $SLURM_ARRAY_TASK_ID \
 --location_lucia \
 --wandb_api_key $wandb_api_key \
 --save_model \
---freq-save-model 50 \
+--freq-save-model 50
 #--use_amp
 #--resume "$resume_path" \
 #--start-epoch 160 \
