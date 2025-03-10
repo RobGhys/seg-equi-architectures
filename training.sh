@@ -21,6 +21,9 @@
 export OMP_NUM_THREADS=8
 export MKL_NUM_THREADS=8
 
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/cudnn/lib64:$LD_LIBRARY_PATH
+
 export PYTHONPATH=$PYTHONPATH:/gpfs/scratch/acad/lysmed/seg-equi-architectures/src/U-Net
 
 # Check if wandb_api_key is provided as a command line argument
@@ -32,6 +35,13 @@ fi
 
 # Assign the first command line argument to wandb_api_key
 wandb_api_key=$1
+
+
+echo "CUDA environment:"
+which nvcc
+nvidia-smi
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+ldconfig -p | grep libnvrtc
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 
@@ -58,5 +68,14 @@ $SLURM_ARRAY_TASK_ID \
 
 echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
 
-echo "Exiting the program."
+exit_code=$?
+if [ $exit_code -ne 0 ]; then
+    echo "Python script failed with exit code $exit_code"
+    echo "Checking CUDA libraries..."
+    find /usr -name "libnvrtc.so*" 2>/dev/null
+    find /usr -name "libcudnn_ops_infer.so.8*" 2>/dev/null
+fi
 
+echo "Finished Task #: $SLURM_ARRAY_TASK_ID"
+
+echo "Exiting the program."
