@@ -103,7 +103,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 10.00,
+                "lbda": 8.65,
                 "bilinear": true,
                 "gspace": "C16",
                 "acti": "relu",
