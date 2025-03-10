@@ -45,7 +45,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 6.65,
+                "lbda": 9.50,
                 "bilinear": true,
                 "gspace": "C16",
                 "acti": "relu",
@@ -103,7 +103,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 9.65,
+                "lbda": 9.50,
                 "bilinear": true,
                 "gspace": "C16",
                 "acti": "relu",
@@ -161,7 +161,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 6.65,
+                "lbda": 9.50,
                 "bilinear": true,
                 "gspace": "C16",
                 "acti": "relu",
@@ -219,7 +219,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 23,
+                "lbda": 9.50,
                 "bilinear": true,
                 "gspace": "C16",
                 "acti": "relu",
@@ -277,7 +277,7 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 23,
+                "lbda": 9.50,
                 "bilinear": true,
                 "gspace": "C16",
                 "acti": "relu",
