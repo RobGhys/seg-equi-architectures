@@ -1,7 +1,7 @@
 {
     "NucleiSeg": {
         "name": "NucleiSeg",
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/NucleiSeg",
+        "path": "/gpfs/projects/acad/lysmed/datasets_bench/NucleiSeg",
         "annotation_file" : null,
         "multiclass_palette_path" : null,
         "in_channels": 3,
@@ -47,7 +47,7 @@
             "UNet_e2cnn": {
                 "lbda": 6.65,
                 "bilinear": true,
-                "gspace": "D4",
+                "gspace": "C16",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -60,7 +60,7 @@
     "kvasir": {
         "name": "kvasir",
         "annotation_file" : null,
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/kvasir",
+        "path": "/gpfs/projects/acad/lysmed/datasets_bench/kvasir",
         "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
@@ -103,9 +103,9 @@
                 "bn": false
             },
             "UNet_e2cnn": {
-                "lbda": 6.65,
+                "lbda": 10.00,
                 "bilinear": true,
-                "gspace": "D4",
+                "gspace": "C16",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -118,7 +118,7 @@
     "URDE": {
         "name": "URDE",
         "annotation_file" : null,
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/URDE",
+        "path": "/gpfs/projects/acad/lysmed/datasets_bench/URDE",
         "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 1,
@@ -163,7 +163,7 @@
             "UNet_e2cnn": {
                 "lbda": 6.65,
                 "bilinear": true,
-                "gspace": "C8",
+                "gspace": "C16",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -175,7 +175,7 @@
     },
     "isaid": {
         "name": "isaid",
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/isaid",
+        "path": "/gpfs/projects/acad/lysmed/datasets_bench/isaid",
         "annotation_file" : null,
         "multiclass_palette_path" : "/gpfs/scratch/acad/lysmed/datasets_bench/isaid/isaid_mask_palette.json",
         "in_channels": 3,
@@ -221,7 +221,7 @@
             "UNet_e2cnn": {
                 "lbda": 23,
                 "bilinear": true,
-                "gspace": "C4",
+                "gspace": "C16",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true
@@ -234,7 +234,7 @@
     "coco": {
         "name": "coco",
         "annotation_file" : "/gpfs/scratch/acad/lysmed/datasets_bench/coco/stuff_train2017.json",
-        "path": "/gpfs/projects/acad/bcnn/datasets_bench/coco",
+        "path": "/gpfs/projects/acad/lysmed/datasets_bench/coco",
         "multiclass_palette_path" : null,
         "in_channels": 3,
         "n_classes": 93,
@@ -279,7 +279,7 @@
             "UNet_e2cnn": {
                 "lbda": 23,
                 "bilinear": true,
-                "gspace": "C4",
+                "gspace": "C16",
                 "acti": "relu",
                 "acti_kwargs": {
                     "inplace": true

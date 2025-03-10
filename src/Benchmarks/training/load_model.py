@@ -88,10 +88,12 @@ def getModel(model_name, settings):
             gspace = gspaces.Rot2dOnR2(N=4)
         elif settings['models'][model_name]['gspace'] == 'C8':
             gspace = gspaces.Rot2dOnR2(N=8)
+        elif settings['models'][model_name]['gspace'] == 'C16':
+            gspace = gspaces.Rot2dOnR2(N=16)
         elif settings['models'][model_name]['gspace'] == 'D4':
             gspace = gspaces.FlipRot2dOnR2(N=4)
         else:
-            raise NotImplementedError("gspace should be C4, C8 or D4")
+            raise NotImplementedError("gspace should be C4, C8, C16 or D4")
         model = UNet_e2cnn(settings['in_channels'], settings['n_classes'],
                            lbda=settings['models'][model_name]['lbda'], acti=acti, 
                            acti_kwargs=acti_kwargs, bilinear=settings['models'][model_name]['bilinear'],
