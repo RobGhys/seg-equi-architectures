@@ -254,10 +254,14 @@ def get_train_test_data(path, testing_folds, training_folds,
         fold_data = [os.path.join(fold, f) for f in os.listdir(os.path.join(path, 'imgs', fold))
                        if os.path.isfile(os.path.join(path, 'imgs', fold, f))]
         if percent_subset is not None:
+            print('subset of the data')
             random.seed(seed)
             sample_size = max(1, int(percent_subset * len(fold_data)))
             fold_sample = random.sample(fold_data, sample_size)
             training_data.extend(fold_sample)
+        else:
+            print('full dataset!')
+            training_data.extend(fold_data)
 
     testing_data = []
     for fold in testing_folds:
