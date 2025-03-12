@@ -136,6 +136,7 @@ def get_data_loader(settings, fold,
                     subset_data: bool = False, seed: int = 42,
                     percent_subset: float = 0.1):
     path = settings['path']
+    print(f'Percent subset is: {percent_subset}')
 
     # Get the folds that will be used for training and testing, respectively
     folds = ['fold_0', 'fold_1', 'fold_2', 'fold_3', 'fold_4']
@@ -461,10 +462,12 @@ if __name__ == "__main__":
     epoch = 1
 
     # dataset choice
+    pc_subset = None
+    #pc_subset = 0.1
     settings = settings_coco
     train_loader, test_loader = get_data_loader(settings, fold, subset_data=True,
                                                 annotation_file=settings['annotation_file'],
-                                                seed=42, percent_subset=0.1)
+                                                seed=42, percent_subset=pc_subset)
 
     for data in train_loader:
         if settings['mask_type'] == 'multiclass_semantic':
