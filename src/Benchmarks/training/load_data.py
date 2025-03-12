@@ -244,6 +244,8 @@ def get_data_loader(settings, fold,
                                      num_workers=settings['num_workers'],
                                      pin_memory=True)
 
+    print(f"Size of train_loader: {len(train_loader.dataset)}")
+
     return train_loader, test_loader
 
 
@@ -465,7 +467,8 @@ if __name__ == "__main__":
     pc_subset = None
     #pc_subset = 0.1
     settings = settings_coco
-    train_loader, test_loader = get_data_loader(settings, fold, subset_data=True,
+    subset_data= False
+    train_loader, test_loader = get_data_loader(settings, fold, subset_data=False,
                                                 annotation_file=settings['annotation_file'],
                                                 seed=42, percent_subset=pc_subset)
 
