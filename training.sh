@@ -44,6 +44,7 @@ echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 ldconfig -p | grep libnvrtc
 
 echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
+echo "Starting Task #: $SLURM_ARRAY_TASK_ID"
 
 #resume_path="/gpfs/scratch/acad/lysmed/seg-equi-architectures/outputs/coco/UNet_e2cnn/fold_${SLURM_ARRAY_TASK_ID}/checkpoint_epoch_159.pth"
 
