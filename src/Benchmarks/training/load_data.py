@@ -134,7 +134,7 @@ class BasicDataset(Dataset):
 
 def get_data_loader(settings, fold,
                     subset_data: bool = False, seed: int = 42,
-                    percent_subset: float = 0.1):
+                    percent_subset = None):
     path = settings['path']
     print(f'Percent subset is: {percent_subset}')
 
