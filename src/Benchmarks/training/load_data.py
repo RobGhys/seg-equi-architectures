@@ -244,8 +244,6 @@ def get_data_loader(settings, fold,
                                      num_workers=settings['num_workers'],
                                      pin_memory=True)
 
-    print(f"Size of train_loader: {len(train_loader.dataset)}")
-
     return train_loader, test_loader
 
 

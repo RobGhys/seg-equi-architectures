@@ -87,6 +87,7 @@ with open(settings_json, 'r') as jsonfile:
 # Load the data
 percent_subset = None
 train_loader, test_loader = get_data_loader(settings, fold, subset_data, seed=42, percent_subset=percent_subset)
+print(f"Size of train_loader: {len(train_loader.dataset)}")
 
 # Load the model
 model, n_params = getModel(model_name, settings)
