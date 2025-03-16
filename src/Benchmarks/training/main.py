@@ -179,6 +179,7 @@ else:
     }
 
 epoch = start_epoch
+print(f'Start at epoch: {epoch}')
 
 for epoch in tqdm(range(start_epoch, settings['models']['num_epochs'])):
     combined_loss = False
